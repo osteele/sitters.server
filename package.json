@@ -1,0 +1,30 @@
+{
+  "name": "sitters",
+  "version": "0.0.1",
+  "author": "Oliver Steele <steele@osteele.com>",
+  "private": true,
+  "repositories": [
+    {
+      "type": "git",
+      "url": "git://github.com/osteele/coffeescript-on-heroku.git"
+    }
+  ],
+  "engines": {
+    "npm": "~1.3.11",
+    "node": "~0.10.21"
+  },
+  "dependencies": {
+    "coffee-script": "~1.6.3",
+    "express": "~3.4.4"
+  },
+  "devDependencies": {
+    "grunt": "~0.4.1",
+    "grunt-coffeelint": "0.0.7",
+    "grunt-contrib-watch": "~0.5.3",
+    "load-grunt-tasks": "~0.1.0",
+    "firebase": "~0.6.6",
+    "dotenv": "0.0.5",
+    "envfile": "~1.0.0"
+  },
+  "main": "server.coffee"
+}
