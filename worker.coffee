@@ -1,40 +1,50 @@
 # require 'dotenv'
 # console.log process.env.FIREBASE_SECRET
+util = require 'util'
+Firebase = require 'firebase'
 
-Firebase = require('firebase')
-rootRef = new Firebase('https://sevensitters.firebaseIO.com/')
-requestRef = rootRef.child('request')
-messageRef = rootRef.child('messages')
+rootFB = new Firebase('https://sevensitters.firebaseIO.com/')
+requestsFB = rootFB.child('request')
+messagesFB = rootFB.child('message')
+erroredFB = rootFB.child('errored')
 
-requestRef.on 'child_added', (snapshot) ->
+requestsFB.on 'child_added', (snapshot) ->
   key = snapshot.name()
-  data = snapshot.val()
+  message = snapshot.val()
+  console.log "Request #{util.inspect(message)}"
   try
-    handleRequest data.requestType, data
+    handleRequestFrom message.userId, message.requestType, message.parameters
   catch e
-    console.log e
-  requestRef.child(snapshot.name()).remove()
+    console.error e
+    erroredFB << message
+  requestsFB.child(key).remove()
 
-handleRequest = (requestType, data) ->
+handleRequestFrom = (userId, requestType, parameters) ->
   handler = handlers[requestType]
   console.log "Unknown request type #{requestType}" unless handler
-  handler?(data)
+  handler?(userId, parameters)
+
+sendMessageTo = (userId, message) ->
+  console.log "Send #{util.inspect(message)} -> #{userId}"
+  messagesFB.child(userId).push message
 
 handlers =
-  addSitter: (data) ->
-    userId = data.userId
-    familyId = data.familyId
-    sitterId = data.sitterId
-    sitterIdsRef = rootRef.child("family/#{familyId}/sitter_ids")
+  addSitter: (userId, {familyId, sitterId}) ->
+    console.log "family/#{familyId}/sitter_ids"
+    sitterIdsRef = rootFB.child("family/#{familyId}/sitter_ids")
 
     sitterIdsRef.once 'value', (snapshot) ->
       sitterIds = snapshot.val()
       return if sitterId in sitterIds
       sitterIdsRef.set sitterIds.concat([sitterId])
-      messageRef.child(userId).push messageType: 'addedSitter', sitterId: sitterId
+      sendMessageTo userId,
+        messageType: 'addedSitter',
+        messageTitle: 'Sitter Confirmed',
+        messageText:'{{sitter.firstName}} has accepted your request. We’ve added her to your Seven Sitters.',
+        parameters: {sitterId}
 
     # sitterIdsRef.transaction (sitterIds) ->
     #   return if sitterId in sitterIds
     #   return sitterIds.concat([sitterId])
     # , (error, committed, snapshot) ->
-    #   messageRef.child(userId).push messageType: 'addedSitter', sitterId: sitterId
+    #   messagesFB.child(userId).push messageType: 'addedSitter', sitterId: sitterId
