@@ -1,0 +1,98 @@
+[
+  {
+    "id": 1,
+    "name": "Ashley",
+    "age": 18,
+    "hours": {
+      "Wed": [[17, 27]],
+      "Fri": [[17, 27]],
+      "Sat": [[17, 24]]
+    }
+  },
+  {
+    "id": 2,
+    "name": "Kayla",
+    "age": 16,
+    "hours": {
+      "Mon": [[17, 22]],
+      "Tue": [[17, 22]],
+      "Fri": [[17, 22]],
+      "Sat": [[17, 24]]
+    }
+  },
+  {
+    "id": 3,
+    "name": "Kristen Morey",
+    "age": 14,
+    "description": "Susie Morey’s 14-year-old sister. Currently a freshman at Palo Alto High School",
+    "hours": {
+      "Fri": [[17, 24]],
+      "Sat": [[17, 24]]
+    }
+  },
+  {
+    "id": 4,
+    "name": "Amy Gino",
+    "age": 12,
+    "description": "Ken and Stacy Reno’s sitter",
+    "hours": {
+      "Fri": [[18, 20]],
+      "Sat": [[18, 20]],
+      "Sun": [[17, 20]]
+    }
+  },
+  {
+    "id": 5,
+    "name": "Michelle Shaffer",
+    "age": 16,
+    "description": "Pete and Lisa Shaffer’s daughter",
+    "hours": {
+      "Mon": [[17, 24]],
+      "Sat": [[17, 25]]
+    }
+  },
+  {
+    "id": 6,
+    "name": "Maggie McConnell",
+    "age": 28,
+    "description": "Leslie McConnell’s mother",
+    "hours": {
+      "Mon": [[18.5, 27]],
+      "Wed": [[18.5, 27]],
+      "Thu": [[18.5, 27]]
+    }
+  },
+  {
+    "id": 7,
+    "name": "Gina Marelli",
+    "age": 15,
+    "description": "Kayla Brenner’s best friend",
+    "hours": {
+      "Tue": [[17, 23]],
+      "Fri": [[17, 23]],
+      "Sat": [[17, 24]]
+    }
+  },
+  {
+    "id": 8,
+    "name": "Gwen Stephenson",
+    "age": 24,
+    "description": "Isabella Moreno’s teacher",
+    "hours": {
+      "Tue": [[17, 23]],
+      "Fri": [[17, 23]],
+      "Sat": [[17, 24]]
+    }
+  },
+  {
+    "id": 9,
+    "name": "Layla Smith",
+    "age": 16,
+    "description": "Steve and Diane Smith’s sitter",
+    "hours": {
+      "Tue": [[17, 23]],
+      "Fri": [[17, 23]],
+      "Sat": [[17, 24]]
+    }
+  }
+]
