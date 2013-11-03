@@ -7,10 +7,14 @@ Firebase = require('firebase')
 rootFB = new Firebase('https://sevensitters.firebaseIO.com/')
 requestFB = rootFB.child('request')
 
+DemoAccountKey = 'facebook/511404287'
+
 message = switch subcommand
   when 'add-sitter'
-    {requestType: 'addSitter', accountKey: 'facebook/511404287', parameters: {sitterId: 2}}
+    {requestType: 'addSitter', accountKey: DemoAccountKey, parameters: {sitterId: 2}}
   when 'register-user'
-    {requestType: 'registerUser', accountKey: 'facebook/511404287', parameters: {displayName: 'Sarah', email: 'user@guest.com'}}
+    {requestType: 'registerUser', accountKey: DemoAccountKey, parameters: {displayName: 'Sarah', email: 'user@guest.com'}}
+  when 'set-sitter-count'
+    {requestType: 'setSitterCount', accountKey: DemoAccountKey, parameters: {count: 3}}
 
 requestFB.push message, -> process.exit()
