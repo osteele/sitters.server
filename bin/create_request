@@ -1,0 +1,16 @@
+#!/usr/bin/env coffee
+
+argv = require('optimist').argv
+subcommand = argv._[0] || 'add-sitter'
+
+Firebase = require('firebase')
+rootFB = new Firebase('https://sevensitters.firebaseIO.com/')
+requestFB = rootFB.child('request')
+
+message = switch subcommand
+  when 'add-sitter'
+    {requestType: 'addSitter', accountKey: 'facebook/511404287', parameters: {familyId: 1, sitterId: 2}}
+  when 'register-user'
+    {requestType: 'registerUser', accountKey: 'facebook/511404287', parameters: {displayName: 'Sarah', email: 'user@guest.com'}}
+
+requestFB.push message, -> process.exit()

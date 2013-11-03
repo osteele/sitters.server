@@ -7,6 +7,8 @@
     psql -d postgres -c 'create database sitters'
     psql -d postgres -c 'create user sitters'
 
+    ./bin/create_demo_rows
+
 # Running
 
     coffee worker.coffee
