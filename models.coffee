@@ -2,7 +2,7 @@ Schema = require('jugglingdb').Schema
 schema = new Schema('postgres', {database: 'localhost', username: 'sitters', password: 'sitters', database: 'sitters'})
 
 Account = schema.define 'accounts',
-  provider: {type: String, index: true}
+  provider_name: {type: String, index: true}
   provider_user_id: {type: String, index: true}
 
 Family = schema.define 'families',
@@ -26,4 +26,5 @@ module.exports = {
   Family
   Sitter
   User
+  schema
 }

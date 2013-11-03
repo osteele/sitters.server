@@ -9,7 +9,7 @@ requestFB = rootFB.child('request')
 
 message = switch subcommand
   when 'add-sitter'
-    {requestType: 'addSitter', accountKey: 'facebook/511404287', parameters: {familyId: 1, sitterId: 2}}
+    {requestType: 'addSitter', accountKey: 'facebook/511404287', parameters: {sitterId: 2}}
   when 'register-user'
     {requestType: 'registerUser', accountKey: 'facebook/511404287', parameters: {displayName: 'Sarah', email: 'user@guest.com'}}
 
