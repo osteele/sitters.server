@@ -58,9 +58,10 @@ updateSitterListP = (accountKey, fn) ->
     {family_id, sitter_ids} = rows[0]
     sitter_ids = JSON.parse(sitter_ids)
     sitter_ids = fn(sitter_ids)
-    return unless sitter_ids
+    return Q(false) unless sitter_ids
     queryP(text: UpdateFamilySittersSQL, values: [family_id, JSON.stringify(sitter_ids)]).then ->
       familyFB.child(String(family_id)).child('sitter_ids').set sitter_ids
+      Q(true)
 
 handlers =
   addSitter: (accountKey, {sitterId, delay}) ->
@@ -69,6 +70,14 @@ handlers =
       updateSitterListP accountKey, (sitter_ids) ->
         return if sitterId in sitter_ids
         return sitter_ids.concat([sitterId])
+    ).then((added) ->
+      findSitterP(sitterId) if added
+    ).then((sitter) ->
+      return unless sitter
+      sitterFirstName = sitter.data.name.split(/\s/).pop()
+      sendMessageTo accountKey,
+        messageTitle: 'Sitter Confirmed'
+        messageText: "#{sitterFirstName} has accepted your request. We’ve added her to your Seven Sitters."
     ).done()
 
   registerUser: (accountKey, {displayName, email}) ->
@@ -95,4 +104,5 @@ handlers =
   setSitterCount: (accountKey, {count}) ->
     updateSitterListP accountKey, (sitter_ids) ->
       count = Math.max(0, Math.min(7, count))
+      return [] unless count > 0
       return [1..count]
