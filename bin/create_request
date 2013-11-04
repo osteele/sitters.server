@@ -9,12 +9,19 @@ requestFB = rootFB.child('request')
 
 DemoAccountKey = 'facebook/511404287'
 
-message = switch subcommand
-  when 'add-sitter'
+RequestTypes =
+  'add-sitter':
     {requestType: 'addSitter', accountKey: DemoAccountKey, parameters: {sitterId: 2}}
-  when 'register-user'
+  'register-user':
     {requestType: 'registerUser', accountKey: DemoAccountKey, parameters: {displayName: 'Sarah', email: 'user@guest.com'}}
-  when 'set-sitter-count'
+  'set-sitter-count':
     {requestType: 'setSitterCount', accountKey: DemoAccountKey, parameters: {count: 3}}
 
-requestFB.push message, -> process.exit()
+if subcommand of RequestTypes
+  message = RequestTypes[subcommand]
+  requestFB.push message, -> process.exit()
+else
+  console.log 'Requests:'
+  for name of RequestTypes
+    console.log '  ' + name
+  process.exit()
