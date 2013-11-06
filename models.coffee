@@ -1,10 +1,12 @@
 require('dotenv')().load()
 
 config = do ->
-  match = process.env.DATABASE_URL.match(RegExp('^postgres://(.+?):(.+?)@(.+?)/(.+)$'))
-  throw "DATABASE_URL not a known syntax: #{process.env.DATABASE_URL}" unless match
-  [username, password, hostname, database] = match.slice(1)
-  {username, password, hostname, database}
+  DATABASE_URL = process.env.DATABASE_URL
+  match = DATABASE_URL.match(RegExp('^postgres://(.+?):(.+?)@(.+?)(?::([0-9]+))?/(.+)$'))
+  throw "DATABASE_URL not a known syntax: #{DATABASE_URL}" unless match
+  [username, password, host, port, database] = match.slice(1)
+  port = Number(port ? 5432)
+  {username, password, host, port, database}
 
 Schema = require('jugglingdb').Schema
 schema = new Schema('postgres', config)
