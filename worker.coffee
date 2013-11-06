@@ -59,7 +59,9 @@ updateSitterListP = (accountKey, fn) ->
     sitter_ids = JSON.parse(sitter_ids)
     sitter_ids = fn(sitter_ids)
     return Q(false) unless sitter_ids
+    console.log "Update sitter_ids<-#{sitter_ids}"
     queryP(text: UpdateFamilySittersSQL, values: [family_id, JSON.stringify(sitter_ids)]).then ->
+      console.log "Updated sitter_ids<-#{sitter_ids}"
       familyFB.child(String(family_id)).child('sitter_ids').set sitter_ids
       Q(true)
 
@@ -68,12 +70,16 @@ handlers =
     delay ?= DefaultAddSitterDelay
     Q.delay(delay).then(->
       updateSitterListP accountKey, (sitter_ids) ->
+        console.log "Add sitter #{sitterId} to #{sitter_ids}"
         return if sitterId in sitter_ids
         return sitter_ids.concat([sitterId])
     ).then((added) ->
+      console.log "Added=#{added}; find sitter id=#{sitterId}"
       findSitterP(sitterId) if added
     ).then((sitter) ->
+      console.log "Couldn't find sitter id=#{sitterId}"
       return unless sitter
+      console.log "Sending message add sitter #{sitter.id}"
       sitterFirstName = sitter.data.name.split(/\s/).pop()
       sendMessageTo accountKey,
         messageTitle: 'Sitter Confirmed'
@@ -83,11 +89,15 @@ handlers =
   registerUser: (accountKey, {displayName, email}) ->
     [provider_name, provider_user_id] = accountKey.split('/', 2)
     findOneAccountP(where: {provider_name, provider_user_id}).then((account) ->
+      console.log "Found account key=#{accountKey}" if account
       return if account
+      console.log "Creating account key=#{accountKey}" if account
       findOneUserP({email}).then((user) ->
         if user
+          console.log "Found user email=#{email}"
           Q.ninvoke(user, 'updateAttributes', {displayName})
         else
+          console.log "Creating user email=#{email}"
           createUserP {displayName, email}
       ).then((user) ->
         accountP = createAccountP {provider_name, provider_user_id, user_id: user.id}
