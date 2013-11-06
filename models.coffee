@@ -1,4 +1,4 @@
-require('dotenv')().load()
+require('dotenv').load()
 
 config = do ->
   DATABASE_URL = process.env.DATABASE_URL
