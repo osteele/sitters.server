@@ -80,7 +80,7 @@ handlers =
       console.log "Couldn't find sitter id=#{sitterId}"
       return unless sitter
       console.log "Sending message add sitter #{sitter.id}"
-      sitterFirstName = sitter.data.name.split(/\s/).pop()
+      sitterFirstName = sitter.data.name.split(/\s/).shift()
       sendMessageTo accountKey,
         messageTitle: 'Sitter Confirmed'
         messageText: "#{sitterFirstName} has accepted your request. We’ve added her to your Seven Sitters."
