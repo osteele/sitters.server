@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "coffee-script": "~1.6.3",
+    "dotenv": "~0.0.5",
     "express": "~3.4.4",
     "firebase": "~0.6.6",
     "jugglingdb": "~0.2.2",
@@ -25,11 +26,9 @@
   },
   "devDependencies": {
     "grunt": "~0.4.1",
-    "grunt-coffeelint": "0.0.7",
+    "grunt-coffeelint": "~0.0.7",
     "grunt-contrib-watch": "~0.5.3",
-    "load-grunt-tasks": "~0.1.0",
-    "dotenv": "0.0.5",
-    "envfile": "~1.0.0"
+    "load-grunt-tasks": "~0.1.0"
   },
   "main": "server.coffee"
 }
