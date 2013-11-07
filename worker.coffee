@@ -1,18 +1,15 @@
+_ = require 'underscore'
 Q = require 'q'
 util = require 'util'
 Firebase = require 'firebase'
+models = require './models'
+_(global).extend(require('./modelsP'))
+_(global).extend(require('./push'))
+
+# testPush()
+# process.exit()
 
 DefaultAddSitterDelay = 20 * 1000
-
-models = require './models'
-findOneAccountP = Q.nbind models.Account.findOne, models.Account
-findOneUserP = Q.nbind models.User.findOne, models.User
-createAccountP = Q.nbind models.Account.create, models.Account
-createFamilyP = Q.nbind models.Family.create, models.Family
-createUserP = Q.nbind models.User.create, models.User
-findFamilyP = Q.nbind models.Family.find, models.Family
-findSitterP = Q.nbind models.Sitter.find, models.Sitter
-findUserP = Q.nbind models.User.find, models.User
 
 rootFB = new Firebase('https://sevensitters.firebaseIO.com/')
 requestsFB = rootFB.child('request')
@@ -39,7 +36,20 @@ handleRequestFrom = (accountKey, requestType, parameters) ->
 
 sendMessageTo = (accountKey, message) ->
   console.log "Send #{util.inspect(message)} -> #{accountKey}"
-  messagesFB.child(accountKey).push message
+  # fb_id = messagesFB.child(accountKey).push message
+  # console.log "fb_id = #{fb_id}"
+  [provider_name, provider_user_id] = accountKey.split('/', 2)
+  queryP(text: SelectDeviceTokenFromAccountKeySQL, values: [provider_name, provider_user_id]).then (rows) ->
+    rows.forEach ({token}) ->
+      console.log "Send #{util.inspect(message)} -> #{token}"
+      pushMessageTo token, alert: message.messageText, payload: message
+
+SelectDeviceTokenFromAccountKeySQL = """
+SELECT token
+FROM devices
+JOIN users ON users.id=devices.user_id
+JOIN accounts ON accounts.user_id=users.id
+WHERE provider_name=$1 and provider_user_id=$2;"""
 
 SelectAccountUserFamilySQL = """
 SELECT families.id AS family_id, sitter_ids
@@ -50,8 +60,6 @@ WHERE provider_name=$1 and provider_user_id=$2;"""
 
 UpdateFamilySittersSQL = "UPDATE families SET sitter_ids=$2 WHERE id=$1;"
 
-queryP = Q.nbind models.schema.adapter.query, models.schema.adapter
-
 updateSitterListP = (accountKey, fn) ->
   [provider_name, provider_user_id] = accountKey.split('/', 2)
   queryP(text: SelectAccountUserFamilySQL, values: [provider_name, provider_user_id]).then (rows) ->
@@ -59,9 +67,9 @@ updateSitterListP = (accountKey, fn) ->
     sitter_ids = JSON.parse(sitter_ids)
     sitter_ids = fn(sitter_ids)
     return Q(false) unless sitter_ids
-    console.log "Update sitter_ids<-#{sitter_ids}"
+    console.log "Update sitter_ids <- #{sitter_ids}"
     queryP(text: UpdateFamilySittersSQL, values: [family_id, JSON.stringify(sitter_ids)]).then ->
-      console.log "Updated sitter_ids<-#{sitter_ids}"
+      console.log "Updated sitter_ids <- #{sitter_ids}"
       familyFB.child(String(family_id)).child('sitter_ids').set sitter_ids
       Q(true)
 
@@ -77,13 +85,29 @@ handlers =
       console.log "Added=#{added}; find sitter id=#{sitterId}"
       findSitterP(sitterId) if added
     ).then((sitter) ->
-      console.log "Couldn't find sitter id=#{sitterId}"
+      # console.log "Couldn't find sitter id=#{sitterId}" unless sitter
       return unless sitter
       console.log "Sending message add sitter #{sitter.id}"
       sitterFirstName = sitter.data.name.split(/\s/).shift()
       sendMessageTo accountKey,
         messageTitle: 'Sitter Confirmed'
         messageText: "#{sitterFirstName} has accepted your request. We’ve added her to your Seven Sitters."
+    ).done()
+
+  registerDeviceToken: (accountKey, {token}) ->
+    [provider_name, provider_user_id] = accountKey.split('/', 2)
+    accountP = findOneAccountP where: {provider_name, provider_user_id}
+    deviceP = findOneDeviceP where: {token}
+    Q.all([accountP, deviceP]).spread((account, device) ->
+      console.log "Register #{token} for device=#{device} account=#{account}"
+      return unless account
+      return if device and account.user_id == device.user_id
+      if device
+        console.log "Update device #{device}"
+        updateAttributesP device, user_id: account.user_id
+      else
+        console.log "Create device"
+        createDeviceP {token, user_id: account.user_id}
     ).done()
 
   registerUser: (accountKey, {displayName, email}) ->
@@ -95,7 +119,7 @@ handlers =
       findOneUserP({email}).then((user) ->
         if user
           console.log "Found user email=#{email}"
-          Q.ninvoke(user, 'updateAttributes', {displayName})
+          updateAttributes user, {displayName}
         else
           console.log "Creating user email=#{email}"
           createUserP {displayName, email}
@@ -103,7 +127,8 @@ handlers =
         accountP = createAccountP {provider_name, provider_user_id, user_id: user.id}
         familyP = createFamilyP {sitter_ids: []}
         Q.all([accountP, familyP]).spread (account, family) ->
-          Q.ninvoke(user, 'updateAttributes', family_id: family.id).then -> Q(family)
+          updateAttributes(user, family_id: family.id).then ->
+            Q(family)
       )
     ).then((family) ->
       return unless family
@@ -114,5 +139,5 @@ handlers =
   setSitterCount: (accountKey, {count}) ->
     updateSitterListP accountKey, (sitter_ids) ->
       count = Math.max(0, Math.min(7, count))
-      return [] unless count > 0
-      return [1..count]
+      return if sitter_ids.length == count
+      return _.uniq(sitter_ids.concat([1..7]))[0...count]

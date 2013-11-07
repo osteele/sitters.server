@@ -1,7 +1,7 @@
 #!/usr/bin/env coffee
 
 argv = require('optimist').argv
-subcommand = argv._[0] || 'add-sitter'
+subcommand = argv._[0]
 
 Firebase = require('firebase')
 rootFB = new Firebase('https://sevensitters.firebaseIO.com/')

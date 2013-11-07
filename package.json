@@ -28,7 +28,9 @@
     "grunt": "~0.4.1",
     "grunt-coffeelint": "~0.0.7",
     "grunt-contrib-watch": "~0.5.3",
-    "load-grunt-tasks": "~0.2.0"
+    "load-grunt-tasks": "~0.2.0",
+    "apn": "~1.4.2",
+    "debug": "~0.7.3"
   },
   "main": "server.coffee"
 }

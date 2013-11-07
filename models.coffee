@@ -15,6 +15,9 @@ Account = schema.define 'accounts',
   provider_name: {type: String, index: true}
   provider_user_id: {type: String, index: true}
 
+Device = schema.define 'devices',
+  token: {type: String, index: true}
+
 Family = schema.define 'families',
   sitter_ids: Schema.JSON # INTEGER[]
 
@@ -26,6 +29,7 @@ User = schema.define 'users',
   email: String
 
 User.hasMany Account, foreignKey: 'user_id'
+User.hasMany Device, foreignKey: 'user_id'
 Family.hasMany 'parents', model: User, foreignKey: 'family_id'
 
 schema.isActual (err, actual) ->
@@ -33,6 +37,7 @@ schema.isActual (err, actual) ->
 
 module.exports = {
   Account
+  Device
   Family
   Sitter
   User
