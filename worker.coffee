@@ -2,12 +2,9 @@ _ = require 'underscore'
 Q = require 'q'
 util = require 'util'
 Firebase = require 'firebase'
-models = require './models'
-_(global).extend(require('./modelsP'))
-_(global).extend(require('./push'))
-
-# testPush()
-# process.exit()
+models = require './lib/models'
+_(global).extend(require('./lib/modelsP'))
+_(global).extend(require('./lib/push'))
 
 DefaultAddSitterDelay = 20 * 1000
 
@@ -28,6 +25,7 @@ requestsFB.on 'child_added', (snapshot) ->
     console.error err
   finally
     requestsFB.child(key).remove()
+console.log "Listening on #{requestsFB}"
 
 handleRequestFrom = (accountKey, requestType, parameters) ->
   handler = handlers[requestType]

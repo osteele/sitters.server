@@ -3,12 +3,12 @@ apn = require 'apn'
 options = {gateway: 'gateway.sandbox.push.apple.com'}
 apnConnection = new apn.Connection(options)
 
-apnFeedback = new apn.Feedback(batchFeedback: true, interval: 300)
+apnFeedback = new apn.Feedback(batchFeedback: true, interval: 300, address: 'feedback.sandbox.push.apple.com')
 apnFeedback.on 'feedback', (devices) ->
-  # console.log 'feedback', devices.length
   devices.forEach (item) ->
     console.log item.device, item.time;
     util.debug item
+console.log "Polling APN feedback at #{apnConnection.options.address}"
 
 exports.pushMessageTo = (token, {alert, payload}) ->
   expirationHours = 24
@@ -21,5 +21,5 @@ exports.pushMessageTo = (token, {alert, payload}) ->
   apnConnection.pushNotification note, device
 
 testPush = ->
-  token = "[[redacted]]".replace(/\s/g, '')
+  token = "xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx".replace(/\s/g, '')
   pushMessageTo token, alert: "\uD83D\uDCE7 \u2709 You have a new message", payload: {'messageFrom': 'Oliver'}
