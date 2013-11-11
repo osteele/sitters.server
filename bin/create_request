@@ -1,7 +1,7 @@
 #!/usr/bin/env coffee
 
 argv = require('optimist').argv
-subcommand = argv._[0]
+requestType = argv._[0]
 
 Firebase = require('firebase')
 rootFB = new Firebase('https://sevensitters.firebaseIO.com/')
@@ -9,22 +9,41 @@ requestFB = rootFB.child('request')
 
 DemoAccountKey = 'facebook/511404287'
 
+Object.defineProperty Object.prototype, 'tap',
+  value: (fn) ->
+    fn.call this
+    return this
+  enumerable: false
+
 RequestTypes =
   'add-sitter': ->
-    delay = argv.delay ? 0
     sitterId = argv['sitter-id'] ? 2
-    {requestType: 'addSitter', accountKey: DemoAccountKey, parameters: {sitterId, delay}}
+    {delay: 0, sitterId}
   'register-user': ->
-    {requestType: 'registerUser', accountKey: DemoAccountKey, parameters: {displayName: 'Sarah', email: 'user@guest.com'}}
+    {displayName: 'Mom', email: 'mom@host.com'}
+  'reserve-sitter': ->
+    sitterId = argv['sitter-id'] ? 2
+    startTime = new Date().tap -> @.setHours 18
+    endTime = new Date().tap -> @.setHours 22
+    [startTime, endTime].forEach (date) ->
+      date.setMinutes 0
+      date.setSeconds 0
+      date.setMilliseconds 0
+    {delay: 0, sitterId, startTime: startTime.toISOString(), endTime: endTime.toISOString()}
   'set-sitter-count': ->
     count = argv.count ? 2
-    {requestType: 'setSitterCount', accountKey: DemoAccountKey, parameters: {count}}
+    {count}
 
-if subcommand of RequestTypes
-  message = RequestTypes[subcommand]()
-  requestFB.push message, -> process.exit()
+if requestType of RequestTypes
+  parameters = RequestTypes[requestType]()
+  request = {
+    requestType: requestType.replace(/-(.)/g, (__, c) -> c.toUpperCase())
+    accountKey: DemoAccountKey
+    parameters: parameters
+  }
+  # console.log  request
+  requestFB.push request, -> process.exit()
 else
-  console.log 'Requests:'
   for name of RequestTypes
     console.log '  ' + name
   process.exit()

@@ -4,6 +4,7 @@ models = require './models'
 module.exports = {
   findOneAccountP: Q.nbind models.Account.findOne, models.Account
   findOneDeviceP: Q.nbind models.Device.findOne, models.Device
+  findOneSitterP: Q.nbind models.Sitter.findOne, models.Sitter
   findOneUserP: Q.nbind models.User.findOne, models.User
   createAccountP: Q.nbind models.Account.create, models.Account
   createDeviceP: Q.nbind models.Device.create, models.Device
