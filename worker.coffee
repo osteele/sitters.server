@@ -32,6 +32,11 @@ handleRequestFrom = (accountKey, requestType, parameters) ->
   console.error "Unknown request type #{requestType}" unless handler
   handler?(accountKey, parameters)
 
+# Message is expected to have:
+#   messageType: String -- client keys behavior off of this
+#   messageTitle: String -- UIAlert title
+#   messageText: String -- UIAlert text; also, push notification text
+#   parameters: Hash -- client interprets message against this
 sendMessageTo = (accountKey, message) ->
   console.log "Send #{util.inspect(message)} -> #{accountKey}"
   # fb_id = messagesFB.child(accountKey).push message
@@ -88,8 +93,10 @@ handlers =
       console.log "Sending message add sitter #{sitter.id}"
       sitterFirstName = sitter.data.name.split(/\s/).shift()
       sendMessageTo accountKey,
+        messageType: 'sitterAcceptedConnection'
         messageTitle: 'Sitter Confirmed'
         messageText: "#{sitterFirstName} has accepted your request. We’ve added her to your Seven Sitters."
+        parameters: {sitterId: sitterId}
     ).done()
 
   registerDeviceToken: (accountKey, {token}) ->
