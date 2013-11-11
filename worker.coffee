@@ -33,21 +33,17 @@ requestsFB.on 'child_added', (snapshot) ->
   logger.info "Processing request #{requestType} from #{accountKey} with #{JSON.stringify(parameters).replace(/"(\w+)":/g, '$1:')}"
   try
     handleRequestFrom accountKey, requestType, parameters
-  catch err
-    logger.error err
+  # catch err
+    # logger.error err
   finally
     requestsFB.child(key).remove()
 
 handleRequestFrom = (accountKey, requestType, parameters) ->
   handler = handlers[requestType]
-  logger.error "Unknown request type #{requestType}" unless handler
+  unless handler
+    logger.error "Unknown request type #{requestType}"
+    return
   promise = handler(accountKey, parameters)
-  # delay = parameters.delay
-  # logger.info 'delay', delay
-  # if delay? or requestType in ['addSitter', 'reserveSitter']
-  #   delay ?= DefaultAddSitterDelay
-  #   logger.info 'delay', delay
-  #   promise = Q.delay(delay).then(promise)
   promise.done()
 
 # Message is expected to have:
@@ -95,13 +91,14 @@ updateSitterListP = (accountKey, fn) ->
       Q(true)
 
 handlers =
-  addSitter: (accountKey, {sitterId}) ->
-    updateSitterListP(accountKey, (sitter_ids) ->
-      logger.info "Add sitter #{sitterId} to #{sitter_ids}"
+  addSitter: (accountKey, {sitterId, delay}) ->
+    delay ?= DefaultAddSitterDelay
+    Q.delay(delay * 1000).then(-> updateSitterListP(accountKey, (sitter_ids) ->
+      logger.info "Adding sitter #{sitterId} to #{sitter_ids}"
       return if sitterId in sitter_ids
       return sitter_ids.concat([sitterId])
-    ).then((modified) ->
-      logger.info "Didn't modify sitter id list"
+    )).then((modified) ->
+      logger.info "Didn't modify sitter id list" unless modified
       return unless modified
       logger.info "Added sitter id=#{sitterId}"
       findSitterP(sitterId)
@@ -159,11 +156,13 @@ handlers =
         Q.ninvoke accountFB.child(accountKey).child('family_id'), 'set', family.id
     )
 
-  reserveSitter: (accountKey, {sitterId, startTime, endTime}) ->
+  reserveSitter: (accountKey, {sitterId, startTime, endTime, delay}) ->
     startTime = new Date(startTime)
     endTime = new Date(endTime)
-    logger.info "Finding sitter #{sitterId}"
-    findOneSitterP(where: {sitter_id: sitterId}).then((sitter) ->
+    delay ?= DefaultAddSitterDelay
+    Q.delay(delay * 1000).then(->
+      findOneSitterP(where: {sitter_id: sitterId})
+    ).then((sitter) ->
       logger.info "findOneSitterP(#{sitterId}) = #{sitter}"
       return unless sitter
       sitterFirstName = sitter.data.name.split(/\s/).shift()

@@ -36,12 +36,20 @@ RequestTypes =
 
 if requestType of RequestTypes
   parameters = RequestTypes[requestType]()
+  for key, value of parameters
+    optionName = key.replace(/[A-Z]/g, (c) -> '-' + c.toLowerCase()) # camelCase -> train-case
+    optionValue = argv[optionName]
+    if optionValue?
+      optionValue = Number(optionValue) if value instanceof Number
+      parameters[key] = optionValue
   request = {
-    requestType: requestType.replace(/-(.)/g, (__, c) -> c.toUpperCase())
+    requestType: requestType.replace(/-(.)/g, (__, c) -> c.toUpperCase()) # train-case -> camelCase
     accountKey: DemoAccountKey
     parameters: parameters
   }
-  # console.log  request
+  if false
+    console.log request
+    process.exit()
   requestFB.push request, -> process.exit()
 else
   for name of RequestTypes
