@@ -6,8 +6,7 @@ moment = require 'moment'
 winston = require 'winston'
 Firebase = require 'firebase'
 
-models = require './lib/models'
-_(global).extend require('./lib/modelsP')
+_(global).extend require('./lib/models')
 _(global).extend require('./lib/push')
 
 loggingOptions = {timestamp: true}
@@ -56,7 +55,7 @@ sendMessageTo = (accountKey, message) ->
   firebaseMessageId = messagesFB.child(accountKey).push message
   # logger.info "firebaseMessageId = #{firebaseMessageId}"
   [provider_name, provider_user_id] = accountKey.split('/', 2)
-  queryP(text: SelectDeviceTokenFromAccountKeySQL, values: [provider_name, provider_user_id]).then (rows) ->
+  sequelize.query(SelectDeviceTokenFromAccountKeySQL, null, {raw:true}, {provider_name, provider_user_id}).then (rows) ->
     rows.forEach ({token}) ->
       logger.info "  Push #{message.messageType} -> #{token}"
       pushMessageTo token, alert: message.messageText, payload: message
@@ -66,47 +65,48 @@ SELECT token
 FROM devices
 JOIN users ON users.id=devices.user_id
 JOIN accounts ON accounts.user_id=users.id
-WHERE provider_name=$1 and provider_user_id=$2;"""
+WHERE provider_name=:provider_name and provider_user_id=:provider_user_id;"""
 
 SelectAccountUserFamilySQL = """
-SELECT families.id AS family_id, sitter_ids
+SELECT families.id, families.created_at, families.sitter_ids
 FROM families
 JOIN users ON families.id=family_id
 JOIN accounts ON users.id=user_id
-WHERE provider_name=$1 and provider_user_id=$2;"""
+WHERE provider_name=:provider_name and provider_user_id=:provider_user_id;"""
 
-UpdateFamilySittersSQL = "UPDATE families SET sitter_ids=$2 WHERE id=$1;"
+UpdateFamilySittersSQL = "UPDATE families SET sitter_ids=:sitter_ids WHERE id=:family_id;"
 
 updateSitterListP = (accountKey, fn) ->
   [provider_name, provider_user_id] = accountKey.split('/', 2)
-  queryP(text: SelectAccountUserFamilySQL, values: [provider_name, provider_user_id]).then (rows) ->
-    {family_id, sitter_ids} = rows[0]
-    sitter_ids = JSON.parse(sitter_ids)
+  sequelize.query(SelectAccountUserFamilySQL, Family, {}, {provider_name, provider_user_id}).then (rows) ->
+    family = rows[0]
+    return unless family
+    sitter_ids = family.sitter_ids
     sitter_ids = fn(sitter_ids)
     return Q(false) unless sitter_ids
-    logger.info "Update sitter_ids <- #{sitter_ids}"
-    queryP(text: UpdateFamilySittersSQL, values: [family_id, JSON.stringify(sitter_ids)]).then ->
-      logger.info "Updated sitter_ids <- #{sitter_ids}"
-      familyFB.child(String(family_id)).child('sitter_ids').set sitter_ids
+    logger.info "Update sitter_ids <-", sitter_ids
+    family.updateAttributes({sitter_ids}).then ->
+      logger.info "Updated sitter_ids <-", sitter_ids
+      familyFB.child(String(family.id)).child('sitter_ids').set sitter_ids
       Q(true)
 
 handlers =
   addSitter: (accountKey, {sitterId, delay}) ->
     delay ?= DefaultAddSitterDelay
     Q.delay(delay * 1000).then(-> updateSitterListP(accountKey, (sitter_ids) ->
-      logger.info "Adding sitter #{sitterId} to #{sitter_ids}"
+      logger.info "Adding sitter", sitterId, " to ", sitter_ids
       return if sitterId in sitter_ids
       return sitter_ids.concat([sitterId])
     )).then((modified) ->
-      logger.info "Didn't modify sitter id list" unless modified
+      logger.info "Sitter was already added" unless modified
       return unless modified
-      logger.info "Added sitter id=#{sitterId}"
-      findSitterP(sitterId)
+      Sitter.find(sitterId)
     ).then((sitter) ->
-      # logger.info "Couldn't find sitter id=#{sitterId}" unless sitter
       return unless sitter
       logger.info "Sending message add sitter #{sitter.id}"
-      sitterFirstName = sitter.data.name.split(/\s/).shift()
+      logger.info JSON.parse(sitter.data), typeof JSON.parse(sitter.data)
+      sitterFirstName = JSON.parse(sitter.data).name.split(/\s/).shift()
+      logger.info sitterFirstName
       sendMessageTo accountKey,
         messageType: 'sitterAcceptedConnection'
         messageTitle: 'Sitter Confirmed'
@@ -116,56 +116,45 @@ handlers =
 
   registerDeviceToken: (accountKey, {token}) ->
     [provider_name, provider_user_id] = accountKey.split('/', 2)
-    accountP = findOneAccountP where: {provider_name, provider_user_id}
-    deviceP = findOneDeviceP where: {token}
+    accountP = Account.find where: {provider_name, provider_user_id}
+    deviceP = Device.find where: {token}
     Q.all([accountP, deviceP]).spread((account, device) ->
       logger.info "Register #{token} for device=#{device} account=#{account}"
-      return unless account
       return if device and account.user_id == device.user_id
       if device
         logger.info "Update device #{device}"
-        updateAttributesP device, user_id: account.user_id
+        device.updateAttributes user_id: account.user_id
       else
         logger.info "Create device"
-        createDeviceP {token, user_id: account.user_id}
+        Device.create {token, user_id: account.user_id}
     )
 
   registerUser: (accountKey, {displayName, email}) ->
     [provider_name, provider_user_id] = accountKey.split('/', 2)
-    findOneAccountP(where: {provider_name, provider_user_id}).then((account) ->
+    accountP = Account.findOrCreate({provider_name, provider_user_id})
+    userP = User.findOrCreate({email}, {displayName})
+    Q.all([accountP, userP]).spread (account, user) ->
       logger.info "Found account key=#{accountKey}" if account
-      return if account
-      logger.info "Creating account key=#{accountKey}" if account
-      findOneUserP({email}).then((user) ->
-        if user
-          logger.info "Found user email=#{email}"
-          updateAttributes user, {displayName}
-        else
-          logger.info "Creating user email=#{email}"
-          createUserP {displayName, email}
-      ).then((user) ->
-        accountP = createAccountP {provider_name, provider_user_id, user_id: user.id}
-        familyP = createFamilyP {sitter_ids: []}
-        Q.all([accountP, familyP]).spread (account, family) ->
-          updateAttributes(user, family_id: family.id).then ->
-            Q(family)
-      )
-    ).then((family) ->
-      return unless family
-      Q.ninvoke(familyFB.child(String(family.id)), 'set', {sitter_ids: family.sitter_ids}).then ->
-        Q.ninvoke accountFB.child(accountKey).child('family_id'), 'set', family.id
-    )
+      # return if user.hasAccount(account)
+      Q.all [
+        account.updateAttributes user_id: user.id
+        user.updateAttributes {displayName} #unless user.displayName == displayName,
+        Family.find(user.family_id).then (family) ->
+          return if family
+          Family.create({sitter_ids: '{}'}).then (family) ->
+            user.updateAttributes family_id: family.id
+      ]
 
   reserveSitter: (accountKey, {sitterId, startTime, endTime, delay}) ->
     startTime = new Date(startTime)
     endTime = new Date(endTime)
     delay ?= DefaultAddSitterDelay
     Q.delay(delay * 1000).then(->
-      findOneSitterP(where: {sitter_id: sitterId})
+      Sitter.find where: {sitter_id: sitterId}
     ).then((sitter) ->
-      logger.info "findOneSitterP(#{sitterId}) = #{sitter}"
+      logger.info "Sitter(#{sitterId}) = #{sitter.id}"
       return unless sitter
-      sitterFirstName = sitter.data.name.split(/\s/).shift()
+      sitterFirstName = JSON.parse(sitter.data).name.split(/\s/).shift()
       sendMessageTo accountKey,
         messageType: 'sitterConfirmedReservation'
         messageTitle: 'Sitter Confirmed'

@@ -18,13 +18,14 @@
     "dotenv": "~0.2.0",
     "express": "~3.4.4",
     "firebase": "~0.6.7",
-    "jugglingdb": "~0.2.2",
-    "jugglingdb-postgres": "0.0.1-9",
     "q": "~0.9.7",
     "underscore": "~1.5.2",
     "optimist": "~0.6.0",
     "winston": "~0.7.2",
-    "moment": "~2.4.0"
+    "moment": "~2.4.0",
+    "sequelize": "~2.0.0-beta.1",
+    "sequelize-postgres": "~2.0.0-beta.1",
+    "pg": "~2.8.2"
   },
   "devDependencies": {
     "grunt": "~0.4.1",

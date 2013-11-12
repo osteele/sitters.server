@@ -1,39 +1,34 @@
 require('dotenv').load()
 
-config = do ->
-  DATABASE_URL = process.env.DATABASE_URL
-  match = DATABASE_URL.match(RegExp('^postgres://(.+?):(.+?)@(.+?)(?::([0-9]+))?/(.+)$'))
-  throw "DATABASE_URL not a known syntax: #{DATABASE_URL}" unless match
-  [username, password, host, port, database] = match.slice(1)
-  port = Number(port ? 5432)
-  {username, password, host, port, database}
+Sequelize = require('sequelize-postgres').sequelize
+sequelize = new Sequelize(process.env.DATABASE_URL, {
+  dialect: 'postgres',
+  define: {underscored:true}
+})
 
-Schema = require('jugglingdb').Schema
-schema = new Schema('postgres', config)
+Account = sequelize.define 'accounts',
+  provider_name: {type: Sequelize.STRING, index: true}
+  provider_user_id: {type: Sequelize.STRING, index: true}
 
-Account = schema.define 'accounts',
-  provider_name: {type: String, index: true}
-  provider_user_id: {type: String, index: true}
+Device = sequelize.define 'devices',
+  token: {type: Sequelize.STRING, index: true, unique: true}
 
-Device = schema.define 'devices',
-  token: {type: String, index: true}
+Family = sequelize.define 'families',
+  sitter_ids: Sequelize.ARRAY(Sequelize.INTEGER)
 
-Family = schema.define 'families',
-  sitter_ids: Schema.JSON # INTEGER[]
+Sitter = sequelize.define 'sitters',
+  data: Sequelize.TEXT
 
-Sitter = schema.define 'sitters',
-  data: Schema.JSON
+User = sequelize.define 'users',
+  displayName: Sequelize.STRING
+  email: {type: Sequelize.STRING, index: true, unique: true}
 
-User = schema.define 'users',
-  displayName: String
-  email: String
+Family.hasMany User
+User.hasMany Account
+User.hasMany Device
+# migration.addIndex('Person', ['firstname', 'lastname'])
 
-User.hasMany Account, foreignKey: 'user_id'
-User.hasMany Device, foreignKey: 'user_id'
-Family.hasMany 'parents', model: User, foreignKey: 'family_id'
-
-schema.isActual (err, actual) ->
-  schema.autoupdate() unless actual
+sequelize.sync()
 
 module.exports = {
   Account
@@ -41,5 +36,5 @@ module.exports = {
   Family
   Sitter
   User
-  schema
+  sequelize
 }
