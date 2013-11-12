@@ -45,7 +45,11 @@ handleRequestFrom = (accountKey, requestType, parameters) ->
   promise = handler(accountKey, parameters)
   promise.done()
 
-# Message is expected to have:
+MessageTypes =
+  sitterConfirmedReservation: 'sitterConfirmedReservation'
+  sitterAcceptedConnection: 'sitterAcceptedConnection'
+
+# `message`:
 #   messageType: String -- client keys behavior off of this
 #   messageTitle: String -- UIAlert title
 #   messageText: String -- UIAlert text; also, push notification text
@@ -54,33 +58,15 @@ sendMessageTo = (accountKey, message) ->
   logger.info "Send -> #{accountKey}:", message
   firebaseMessageId = messagesFB.child(accountKey).push message
   # logger.info "firebaseMessageId = #{firebaseMessageId}"
-  [provider_name, provider_user_id] = accountKey.split('/', 2)
-  sequelize.query(SelectDeviceTokenFromAccountKeySQL, null, {raw:true}, {provider_name, provider_user_id}).then (rows) ->
-    rows.forEach ({token}) ->
+  accountKeyDeviceTokensP(accountKey).then (tokens) ->
+    for token in tokens
       logger.info "  Push #{message.messageType} -> #{token}"
       pushMessageTo token, alert: message.messageText, payload: message
 
-SelectDeviceTokenFromAccountKeySQL = """
-SELECT token
-FROM devices
-JOIN users ON users.id=devices.user_id
-JOIN accounts ON accounts.user_id=users.id
-WHERE provider_name=:provider_name and provider_user_id=:provider_user_id;"""
-
-SelectAccountUserFamilySQL = """
-SELECT families.id, families.created_at, families.sitter_ids
-FROM families
-JOIN users ON families.id=family_id
-JOIN accounts ON users.id=user_id
-WHERE provider_name=:provider_name and provider_user_id=:provider_user_id;"""
-
 updateSitterListP = (accountKey, fn) ->
-  [provider_name, provider_user_id] = accountKey.split('/', 2)
-  sequelize.query(SelectAccountUserFamilySQL, Family, {}, {provider_name, provider_user_id}).then (rows) ->
-    family = rows[0]
+  accountKeyUserFamilyP(accountKey).then (family) ->
     return unless family
-    sitter_ids = family.sitter_ids
-    sitter_ids = fn(sitter_ids)
+    sitter_ids = fn(family.sitter_ids)
     return Q(false) unless sitter_ids
     logger.info "Update sitter_ids <-", sitter_ids
     family.updateAttributes({sitter_ids}).then ->
@@ -92,7 +78,7 @@ handlers =
   addSitter: (accountKey, {sitterId, delay}) ->
     delay ?= DefaultAddSitterDelay
     Q.delay(delay * 1000).then(-> updateSitterListP(accountKey, (sitter_ids) ->
-      logger.info "Adding sitter", sitterId, " to ", sitter_ids
+      logger.info "Adding sitter", sitterId, "to", sitter_ids
       return if sitterId in sitter_ids
       return sitter_ids.concat([sitterId])
     )).then((modified) ->
@@ -101,12 +87,9 @@ handlers =
       Sitter.find(sitterId)
     ).then((sitter) ->
       return unless sitter
-      logger.info "Sending message add sitter #{sitter.id}"
-      logger.info JSON.parse(sitter.data), typeof JSON.parse(sitter.data)
       sitterFirstName = JSON.parse(sitter.data).name.split(/\s/).shift()
-      logger.info sitterFirstName
       sendMessageTo accountKey,
-        messageType: 'sitterAcceptedConnection'
+        messageType: MessageTypes.sitterAcceptedConnection
         messageTitle: 'Sitter Confirmed'
         messageText: "#{sitterFirstName} has accepted your request. We’ve added her to your Seven Sitters."
         parameters: {sitterId: sitterId}
@@ -144,17 +127,17 @@ handlers =
       ]
 
   reserveSitter: (accountKey, {sitterId, startTime, endTime, delay}) ->
+    delay ?= DefaultAddSitterDelay
     startTime = new Date(startTime)
     endTime = new Date(endTime)
-    delay ?= DefaultAddSitterDelay
     Q.delay(delay * 1000).then(->
-      Sitter.find where: {sitter_id: sitterId}
+      Sitter.find(sitterId)
     ).then((sitter) ->
       logger.info "Sitter(#{sitterId}) = #{sitter.id}"
       return unless sitter
       sitterFirstName = JSON.parse(sitter.data).name.split(/\s/).shift()
       sendMessageTo accountKey,
-        messageType: 'sitterConfirmedReservation'
+        messageType: MessageTypes.sitterConfirmedReservation
         messageTitle: 'Sitter Confirmed'
         messageText: "#{sitterFirstName} has confirmed your request."
         parameters: {sitterId: sitterId, startTime: startTime.toISOString(), endTime: endTime.toISOString()}
