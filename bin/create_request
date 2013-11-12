@@ -1,7 +1,10 @@
 #!/usr/bin/env coffee
 
+_ = require 'underscore'
 argv = require('optimist').argv
-requestType = argv._[0]
+_(global).extend require('../lib/utils')
+
+requestTrain = argv._[0]
 
 Firebase = require('firebase')
 rootFB = new Firebase('https://sevensitters.firebaseIO.com/')
@@ -9,41 +12,39 @@ requestFB = rootFB.child('request')
 
 DemoAccountKey = 'facebook/511404287'
 
-Object.defineProperty Object.prototype, 'tap',
-  value: (fn) ->
-    fn.call this
-    return this
-  enumerable: false
-
 RequestTypes =
-  'add-sitter': ->
-    sitterId = argv['sitter-id'] ? 2
-    {delay: 0, sitterId}
-  'register-user': ->
-    {displayName: 'Mom', email: 'mom@host.com'}
-  'reserve-sitter': ->
-    sitterId = argv['sitter-id'] ? 2
+  addSitter: -> {delay: 0, sitterId: 2}
+
+  registerDeviceToken: -> {token: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'}
+
+  registerUser: -> {displayName: 'Mom', email: 'mom@host.com'}
+
+  reserveSitter: ->
     startTime = new Date().tap -> @.setHours 18
     endTime = new Date().tap -> @.setHours 22
     [startTime, endTime].forEach (date) ->
       date.setMinutes 0
       date.setSeconds 0
       date.setMilliseconds 0
-    {delay: 0, sitterId, startTime: startTime.toISOString(), endTime: endTime.toISOString()}
-  'set-sitter-count': ->
-    count = argv.count ? 2
-    {count}
+    {delay: 0, sitterId: 2, startTime: startTime.toISOString(), endTime: endTime.toISOString()}
 
-if requestType of RequestTypes
-  parameters = RequestTypes[requestType]()
+  setSitterCount: -> {count: 2}
+
+mergeCommandLineParameters = (parameters) ->
   for key, value of parameters
-    optionName = key.replace(/[A-Z]/g, (c) -> '-' + c.toLowerCase()) # camelCase -> train-case
+    optionName = camelCaseToSnakeCase(key)
     optionValue = argv[optionName]
     if optionValue?
       optionValue = Number(optionValue) if value instanceof Number
       parameters[key] = optionValue
+  return parameters
+
+requestType = trainCaseToCamelCase(requestTrain)
+if requestType of RequestTypes
+  parameters = RequestTypes[requestType]()
+  parameters = mergeCommandLineParameters(parameters)
   request = {
-    requestType: requestType.replace(/-(.)/g, (__, c) -> c.toUpperCase()) # train-case -> camelCase
+    requestType: requestType
     accountKey: DemoAccountKey
     parameters: parameters
   }
