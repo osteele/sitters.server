@@ -1,8 +1,6 @@
 require('dotenv').load()
 winston = require 'winston'
 
-# dbLogger = new winston.Logger transports: [new winston.transports.File(filename: 'logs/queries.log')]
-
 winston.loggers.add 'database',
   console:
     colorize: 'true'

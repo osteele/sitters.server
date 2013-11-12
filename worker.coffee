@@ -74,8 +74,6 @@ JOIN users ON families.id=family_id
 JOIN accounts ON users.id=user_id
 WHERE provider_name=:provider_name and provider_user_id=:provider_user_id;"""
 
-UpdateFamilySittersSQL = "UPDATE families SET sitter_ids=:sitter_ids WHERE id=:family_id;"
-
 updateSitterListP = (accountKey, fn) ->
   [provider_name, provider_user_id] = accountKey.split('/', 2)
   sequelize.query(SelectAccountUserFamilySQL, Family, {}, {provider_name, provider_user_id}).then (rows) ->
