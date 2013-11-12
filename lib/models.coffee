@@ -1,8 +1,21 @@
 require('dotenv').load()
+winston = require 'winston'
+
+# dbLogger = new winston.Logger transports: [new winston.transports.File(filename: 'logs/queries.log')]
+
+winston.loggers.add 'database',
+  console:
+    colorize: 'true'
+    label: 'database'
+    silent: true
+  file:
+    filename: __dirname + '/../logs/database.log'
+    json: false
 
 Sequelize = require('sequelize-postgres').sequelize
 sequelize = new Sequelize(process.env.DATABASE_URL, {
-  dialect: 'postgres',
+  dialect: 'postgres'
+  logging: (msg) -> winston.loggers.get('database').info msg
   define: {underscored:true}
 })
 
