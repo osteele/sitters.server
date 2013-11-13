@@ -13,11 +13,12 @@ winston.loggers.add 'database',
     json: false
 
 Sequelize = require('sequelize-postgres').sequelize
-sequelize = new Sequelize(process.env.DATABASE_URL, {
+sequelize = new Sequelize process.env.DATABASE_URL,
   dialect: 'postgres'
-  logging: (msg) -> winston.loggers.get('database').info msg
   define: {underscored:true}
-})
+  logging: do ->
+    logger = winston.loggers.get('database')
+    (msg) -> logger.info msg
 
 Account = sequelize.define 'accounts',
   provider_name: {type: Sequelize.STRING, index: true}
@@ -29,8 +30,15 @@ Device = sequelize.define 'devices',
 Family = sequelize.define 'families',
   sitter_ids: Sequelize.ARRAY(Sequelize.INTEGER)
 
-Sitter = sequelize.define 'sitters',
-  data: Sequelize.TEXT
+Sitter = sequelize.define 'sitters', {
+  data:
+    type: Sequelize.TEXT
+    get: -> JSON.parse(JSON.parse(@getDataValue('data')))
+    set: (data) -> @setDataValue 'data', JSON.stringify(data)
+}, {
+  getterMethods:
+    firstName: -> @.data.name.split(/\s/).shift()
+}
 
 User = sequelize.define 'users',
   displayName: Sequelize.STRING

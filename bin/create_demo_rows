@@ -9,10 +9,11 @@ createSittersP = Q.all sitters.map (sitter) ->
   id = sitter.id
   data = _.extend {}, sitter
   delete data.id
-  data = JSON.stringify(data)
 
   console.info 'Updating', id, sitter.name
-  Sitter.findOrCreate {id}, {data}
+  Sitter.findOrCreate({id}, {data}).then (sitter) ->
+    sitter.data = data
+    sitter.save()
 
 createSittersP
   .catch( (error) -> console.error error )

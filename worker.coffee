@@ -86,11 +86,10 @@ handlers =
       Sitter.find(sitterId)
     ).then((sitter) ->
       return unless sitter
-      sitterFirstName = JSON.parse(sitter.data).name.split(/\s/).shift()
       sendMessageTo accountKey,
         messageType: MessageTypes.sitterAcceptedConnection
         messageTitle: 'Sitter Confirmed'
-        messageText: "#{sitterFirstName} has accepted your request. We’ve added her to your Seven Sitters."
+        messageText: "#{sitter.firstName} has accepted your request. We’ve added her to your Seven Sitters."
         parameters: {sitterId: sitterId}
     )
 
@@ -134,11 +133,10 @@ handlers =
     ).then((sitter) ->
       logger.info "Sitter(#{sitterId}) = #{sitter.id}"
       return unless sitter
-      sitterFirstName = JSON.parse(sitter.data).name.split(/\s/).shift()
       sendMessageTo accountKey,
         messageType: MessageTypes.sitterConfirmedReservation
         messageTitle: 'Sitter Confirmed'
-        messageText: "#{sitterFirstName} has confirmed your request."
+        messageText: "#{sitter.firstName} has confirmed your request."
         parameters: {sitterId: sitterId, startTime: startTime.toISOString(), endTime: endTime.toISOString()}
     )
 
