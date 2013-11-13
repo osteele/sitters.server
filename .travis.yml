@@ -1,0 +1,6 @@
+language: node_js
+services: postgresql
+before_script:
+- psql -c 'create database sitters;' -U postgres
+env:
+- DATABASE_URL=postgres://postgres@127.0.0.1/sitters
