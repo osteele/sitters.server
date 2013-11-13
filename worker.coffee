@@ -16,14 +16,15 @@ logger = winston
 logger.remove winston.transports.Console
 logger.add winston.transports.Console, loggingOptions
 
-DefaultSitterConfirmationDelay = 20 * 1000
+DefaultSitterConfirmationDelay = 20
 
 rootFB = new Firebase('https://sevensitters.firebaseIO.com/')
-rootFB = rootFB.child(process.env.ENVIRONMENT) if process.env.ENVIRONMENT
-requestsFB = rootFB.child('request')
-messagesFB = rootFB.child('message')
-familyFB = rootFB.child('family')
-accountFB = rootFB.child('account')
+environmentFB = rootFB
+environmentFB = environmentFB.child(process.env.ENVIRONMENT) if process.env.ENVIRONMENT
+requestsFB = environmentFB.child('request')
+messagesFB = environmentFB.child('message')
+accountFB = environmentFB.child('account')
+familyFB = environmentFB.child('family')
 
 logger.info "Polling #{requestsFB}"
 requestsFB.on 'child_added', (snapshot) ->
@@ -75,7 +76,7 @@ updateSitterListP = (accountKey, fn) ->
 
 handlers =
   addSitter: (accountKey, {sitterId, delay}) ->
-    delay ?= DefaultAddSitterDelay
+    delay ?= DefaultSitterConfirmationDelay
     Q.delay(delay * 1000).then(-> updateSitterListP(accountKey, (sitter_ids) ->
       logger.info "Adding sitter", sitterId, "to", sitter_ids
       return if sitterId in sitter_ids
@@ -121,11 +122,12 @@ handlers =
         Family.find(user.family_id).then (family) ->
           return if family
           Family.create({sitter_ids: '{}'}).then (family) ->
-            user.updateAttributes family_id: family.id
+            user.updateAttributes(family_id: family.id).then ->
+              accountFB.child(provider_name).child(provider_user_id).child('family_id').set family.id
       ]
 
   reserveSitter: (accountKey, {sitterId, startTime, endTime, delay}) ->
-    delay ?= DefaultAddSitterDelay
+    delay ?= DefaultSitterConfirmationDelay
     startTime = new Date(startTime)
     endTime = new Date(endTime)
     Q.delay(delay * 1000).then(->
