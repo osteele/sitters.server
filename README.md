@@ -12,3 +12,7 @@
 # Running
 
     coffee worker.coffee
+
+# Contributing
+
+SQL style: http://www.craigkerstiens.com/2012/11/17/how-i-write-sql/
