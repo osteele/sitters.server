@@ -5,13 +5,9 @@ argv = require('optimist').argv
 _(global).extend require('../lib/utils')
 require('dotenv').load()
 
-requestTrain = argv._[0]
+{requestsFB} = require '../lib/firebase'
 
-Firebase = require('firebase')
-rootFB = new Firebase('https://sevensitters.firebaseIO.com/')
-environmentFB = rootFB
-environmentFB = environmentFB.child(process.env.ENVIRONMENT) if process.env.ENVIRONMENT
-requestFB = environmentFB.child('request')
+requestTypeName = argv._[0] # in train-case
 
 TestAccountKey = 'facebook/511404287'
 
@@ -42,7 +38,7 @@ mergeCommandLineParameters = (parameters) ->
       parameters[key] = optionValue
   return parameters
 
-requestType = trainCaseToCamelCase(requestTrain)
+requestType = trainCaseToCamelCase(requestTypeName)
 if requestType of RequestTypes
   parameters = RequestTypes[requestType]()
   parameters = mergeCommandLineParameters(parameters)
@@ -54,7 +50,7 @@ if requestType of RequestTypes
   if false
     console.log request
     process.exit()
-  requestFB.push request, -> process.exit()
+  requestsFB.push request, -> process.exit()
 else
   for name of RequestTypes
     console.log '  ' + name

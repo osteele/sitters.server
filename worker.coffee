@@ -4,10 +4,10 @@ _ = require 'underscore'
 Q = require 'q'
 moment = require 'moment'
 winston = require 'winston'
-Firebase = require 'firebase'
 
 _(global).extend require('./lib/models')
 _(global).extend require('./lib/push')
+_(global).extend require('./lib/firebase')
 
 loggingOptions = {timestamp: true}
 loggingOptions = {colorize: true, timestamp: -> moment().format('H:MM:ss')} if process.env.ENVIRONMENT == 'development'
@@ -17,14 +17,6 @@ logger.remove winston.transports.Console
 logger.add winston.transports.Console, loggingOptions
 
 DefaultSitterConfirmationDelay = 20
-
-rootFB = new Firebase('https://sevensitters.firebaseIO.com/')
-environmentFB = rootFB
-environmentFB = environmentFB.child(process.env.ENVIRONMENT) if process.env.ENVIRONMENT
-requestsFB = environmentFB.child('request')
-messagesFB = environmentFB.child('message')
-accountFB = environmentFB.child('account')
-familyFB = environmentFB.child('family')
 
 logger.info "Polling #{requestsFB}"
 requestsFB.on 'child_added', (snapshot) ->
@@ -71,7 +63,7 @@ updateSitterListP = (accountKey, fn) ->
     sitter_ids = fn(family.sitter_ids)
     return Q(false) unless sitter_ids
     family.updateAttributes({sitter_ids}).then ->
-      familyFB.child(String(family.id)).child('sitter_ids').set sitter_ids
+      familiesFB.child(String(family.id)).child('sitter_ids').set sitter_ids
       Q(true)
 
 handlers =
@@ -123,7 +115,7 @@ handlers =
           return if family
           Family.create({sitter_ids: '{}'}).then (family) ->
             user.updateAttributes(family_id: family.id).then ->
-              accountFB.child(provider_name).child(provider_user_id).child('family_id').set family.id
+              accountsFB.child(provider_name).child(provider_user_id).child('family_id').set family.id
       ]
 
   reserveSitter: (accountKey, {sitterId, startTime, endTime, delay}) ->
