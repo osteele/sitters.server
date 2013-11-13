@@ -19,6 +19,7 @@ logger.add winston.transports.Console, loggingOptions
 DefaultSitterConfirmationDelay = 20 * 1000
 
 rootFB = new Firebase('https://sevensitters.firebaseIO.com/')
+rootFB = rootFB.child(process.env.ENVIRONMENT) if process.env.ENVIRONMENT
 requestsFB = rootFB.child('request')
 messagesFB = rootFB.child('message')
 familyFB = rootFB.child('family')
@@ -68,9 +69,7 @@ updateSitterListP = (accountKey, fn) ->
     return unless family
     sitter_ids = fn(family.sitter_ids)
     return Q(false) unless sitter_ids
-    logger.info "Update sitter_ids <-", sitter_ids
     family.updateAttributes({sitter_ids}).then ->
-      logger.info "Updated sitter_ids <-", sitter_ids
       familyFB.child(String(family.id)).child('sitter_ids').set sitter_ids
       Q(true)
 

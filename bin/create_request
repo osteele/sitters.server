@@ -3,14 +3,16 @@
 _ = require 'underscore'
 argv = require('optimist').argv
 _(global).extend require('../lib/utils')
+require('dotenv').load()
 
 requestTrain = argv._[0]
 
 Firebase = require('firebase')
 rootFB = new Firebase('https://sevensitters.firebaseIO.com/')
+rootFB = rootFB.child(process.env.ENVIRONMENT) if process.env.ENVIRONMENT
 requestFB = rootFB.child('request')
 
-DemoAccountKey = 'facebook/511404287'
+TestAccountKey = 'facebook/511404287'
 
 RequestTypes =
   addSitter: -> {delay: 0, sitterId: 2}
@@ -45,7 +47,7 @@ if requestType of RequestTypes
   parameters = mergeCommandLineParameters(parameters)
   request = {
     requestType: requestType
-    accountKey: DemoAccountKey
+    accountKey: TestAccountKey
     parameters: parameters
   }
   if false
