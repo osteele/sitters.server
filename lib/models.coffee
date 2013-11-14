@@ -20,9 +20,13 @@ sequelize = new Sequelize process.env.DATABASE_URL,
     logger = winston.loggers.get('database')
     (msg) -> logger.info msg
 
-Account = sequelize.define 'accounts',
+Account = sequelize.define 'accounts', {
   provider_name: {type: Sequelize.STRING, index: true}
   provider_user_id: {type: Sequelize.STRING, index: true}
+  }, {
+    getterMethods:
+      firebaseKey: -> [@.provider_name, @.provider_user_id].join('/')
+  }
 
 Device = sequelize.define 'devices',
   token: {type: Sequelize.STRING, index: true, unique: true}
@@ -44,6 +48,7 @@ User = sequelize.define 'users',
   displayName: Sequelize.STRING
   email: {type: Sequelize.STRING, index: true, unique: true}
 
+Account.belongsTo User
 Family.hasMany User
 User.hasMany Account
 User.hasMany Device
@@ -59,7 +64,8 @@ JOIN
 JOIN
   accounts ON accounts.user_id=users.id
 WHERE provider_name=:provider_name
-  AND provider_user_id=:provider_user_id;"""
+  AND provider_user_id=:provider_user_id;
+"""
 
 SelectAccountUserFamilySQL = """
 SELECT
@@ -73,7 +79,8 @@ JOIN
 JOIN
   accounts ON users.id=user_id
 WHERE provider_name=:provider_name
-  AND provider_user_id=:provider_user_id;"""
+  AND provider_user_id=:provider_user_id;
+"""
 
 accountKeyDeviceTokensP = (accountKey) ->
   [provider_name, provider_user_id] = accountKey.split('/', 2)
