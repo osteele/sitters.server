@@ -5,6 +5,9 @@ Q = require 'q'
 moment = require 'moment'
 winston = require 'winston'
 
+require('dotenv').load()
+Q.longStackSupport = true if process.env.ENVIRONMENT == 'development'
+
 _(global).extend require('./lib/models')
 _(global).extend require('./lib/push')
 _(global).extend require('./lib/firebase')
