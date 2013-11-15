@@ -64,14 +64,6 @@ sendMessageTo = (accountKey, message) ->
       logger.info "  Push #{message.messageType} -> #{token}"
       pushMessageTo token, alert: message.messageText, payload: message
 
-updateSitterListP = (accountKey, fn) ->
-  accountKeyUserFamilyP(accountKey).then (family) ->
-    return unless family
-    sitter_ids = fn(family.sitter_ids)
-    return Q(false) unless sitter_ids
-    family.updateAttributes({sitter_ids}).then ->
-      Q(true)
-
 handlers =
   addSitter: (accountKey, {sitterId, delay}) ->
     delay ?= DefaultSitterConfirmationDelay

@@ -92,6 +92,15 @@ accountKeyUserFamilyP = (accountKey) ->
   sequelize.query(SelectAccountUserFamilySQL, Family, {}, {provider_name, provider_user_id}).then (rows) ->
     Q rows[0]
 
+updateSitterListP = (accountKey, fn) ->
+  accountKeyUserFamilyP(accountKey).then (family) ->
+    return unless family
+    sitter_ids = fn(family.sitter_ids)
+    return Q(false) unless sitter_ids
+    sitter_ids = '{}' if sitter_ids.length == 0
+    family.updateAttributes({sitter_ids}).then ->
+      Q true
+
 sequelize.sync()
 
 module.exports = {
@@ -102,5 +111,6 @@ module.exports = {
   User
   accountKeyDeviceTokensP
   accountKeyUserFamilyP
+  updateSitterListP
   sequelize
 }
