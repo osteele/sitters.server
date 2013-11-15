@@ -15,9 +15,9 @@
   },
   "dependencies": {
     "coffee-script": "~1.6.3",
-    "dotenv": "~0.2.0",
+    "dotenv": "~0.2.1",
     "express": "~3.4.4",
-    "firebase": "~0.6.7",
+    "firebase": "~0.6.11",
     "q": "~0.9.7",
     "underscore": "~1.5.2",
     "optimist": "~0.6.0",
@@ -33,7 +33,7 @@
     "grunt-coffeelint": "~0.0.7",
     "grunt-contrib-watch": "~0.5.3",
     "load-grunt-tasks": "~0.2.0",
-    "debug": "~0.7.3"
+    "debug": "~0.7.4"
   },
   "main": "server.coffee"
 }
