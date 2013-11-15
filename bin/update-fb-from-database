@@ -1,48 +1,14 @@
 #!/usr/bin/env coffee
 
 require('dotenv').load()
-_ = require 'underscore'
 Q = require 'Q'
 Q.longStackSupport = true
-# argv = require('optimist').argv
 
-_(global).extend require('../lib/utils')
-_(global).extend require('../lib/models')
-_(global).extend require('../lib/firebase')
+# _(global).extend require('../lib/utils')
 
-ModelClassesByName = {accounts: Account, families: Family, sitters: Sitter, users: User}
+{updateSomeP, updateAllP} = require('../lib/update_firebase_from_changelog')
 
-updateFunction =
-  accounts: (account) ->
-    account.getUser().then (user) ->
-      fb = accountsFB.child(account.firebaseKey).child('family_id')
-      fbOnceP(fb).then (snapshot) ->
-        unless snapshot.val() == user.family_id
-          fbSetP fb, user.family_id
-
-  sitters: (sitter) ->
-    fb = sittersFB.child(sitter.id)
-    fbSetP fb, sitter.data
-
-  families: (family) ->
-    console.log 'family', family.id
-
-  users: (user) ->
-    console.log 'user', user.id
-
-limit = 10
-updateSomeP = ->
-  sequelize.query("SELECT DISTINCT table_name, entity_id FROM change_log LIMIT :limit", null, {raw:true}, {limit}).then (rows) ->
-    Q.all rows.map ({operation, table_name, entity_id}) ->
-      tableClass = ModelClassesByName[table_name]
-      tableClass.find(entity_id).then((entity) ->
-        console.log 'Update', table_name, '#' + entity_id
-        updateFunction[table_name]?(entity)
-      ).then ->
-        sequelize.query("DELETE FROM change_log WHERE  table_name=:table_name AND entity_id=:entity_id", null, {raw:true}, {table_name, entity_id})
-
-updateSomeP().then((updates) ->
-  count = updates.length
+updateAllP().then((count) ->
   console.log 'Updated', count, 'entities'
   process.exit()
 ).done()
