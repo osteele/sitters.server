@@ -2,8 +2,7 @@ Firebase = require('firebase')
 Q = require 'Q'
 
 rootFB = new Firebase('https://sevensitters.firebaseIO.com/')
-environmentFB = rootFB
-environmentFB = environmentFB.child(process.env.ENVIRONMENT) if process.env.ENVIRONMENT
+environmentFB = rootFB.child(process.env.FIREBASE_ENVIRONMENT || 'development')
 
 module.exports = {
   rootFB
