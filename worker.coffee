@@ -12,6 +12,9 @@ _(global).extend require('./lib/models')
 _(global).extend require('./lib/push')
 _(global).extend require('./lib/firebase')
 
+updateFirebaseP = do (fn=require('./lib/update_firebase_from_changelog').updateSomeP) ->
+  -> fn()
+
 loggingOptions = {timestamp: true}
 loggingOptions = {colorize: true, timestamp: -> moment().format('H:MM:ss')} if process.env.ENVIRONMENT == 'development'
 
@@ -40,6 +43,7 @@ handleRequestFrom = (accountKey, requestType, parameters) ->
     logger.error "Unknown request type #{requestType}"
     return
   promise = handler(accountKey, parameters)
+  promise = promise.then(updateFirebaseP)
   promise.done()
 
 MessageTypes =
@@ -66,7 +70,6 @@ updateSitterListP = (accountKey, fn) ->
     sitter_ids = fn(family.sitter_ids)
     return Q(false) unless sitter_ids
     family.updateAttributes({sitter_ids}).then ->
-      familiesFB.child(String(family.id)).child('sitter_ids').set sitter_ids
       Q(true)
 
 handlers =
@@ -117,8 +120,7 @@ handlers =
         Family.find(user.family_id).then (family) ->
           return if family
           Family.create({sitter_ids: '{}'}).then (family) ->
-            user.updateAttributes(family_id: family.id).then ->
-              accountsFB.child(provider_name).child(provider_user_id).child('family_id').set family.id
+            user.updateAttributes(family_id: family.id)
       ]
 
   reserveSitter: (accountKey, {sitterId, startTime, endTime, delay}) ->

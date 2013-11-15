@@ -18,10 +18,11 @@ UpdateFunctions =
     fbSetP fb, sitter.data
 
   families: (family) ->
-    console.info 'family', family.id
+    familiesFB.child(String(family.id)).child('sitter_ids').set family.sitter_ids
 
   users: (user) ->
-    console.info 'user', user.id
+    user.getAccounts().then (accounts) ->
+      Q.all accounts.map UpdateFunctions.accounts
 
 exports.updateSomeP = (limit=10) ->
   sequelize.query("SELECT DISTINCT table_name, entity_id FROM change_log LIMIT :limit", null, {raw:true}, {limit}).then (rows) ->
@@ -37,7 +38,8 @@ exports.updateSomeP = (limit=10) ->
 exports.updateAllP = (trancheSize=10, total=0) ->
   exports.updateSomeP(trancheSize).then (count) ->
     total += count
+    return total
     if count > 0
       exports.updateAllP(trancheSize, total)
     else
-      Q(total)
+      Q total
