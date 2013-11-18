@@ -1,6 +1,4 @@
-exports.camelCaseToSnakeCase = (string) -> string.replace(/[A-Z]/g, (c) -> '-' + c.toLowerCase())
-exports.camelCaseToTrainCase = (string) -> string.replace(/[A-Z]/g, (c) -> '-' + c.toLowerCase())
-exports.trainCaseToCamelCase = (string) -> string.replace(/-(.)/g, (__, c) -> c.toUpperCase())
+_ = require 'underscore'
 
 Object.defineProperty Object.prototype, 'tap',
   value: (fn) ->

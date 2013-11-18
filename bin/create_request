@@ -4,6 +4,8 @@ _ = require 'underscore'
 argv = require('optimist').argv
 util = require 'util'
 _(global).extend require('../lib/utils')
+_.str = require('underscore.string')
+_.mixin(_.str.exports())
 require('dotenv').load()
 
 {requestsFB} = require '../lib/firebase'
@@ -32,14 +34,14 @@ RequestTypes =
 
 mergeCommandLineParameters = (parameters) ->
   for key, value of parameters
-    optionName = camelCaseToSnakeCase(key)
+    optionName = _(key).underscored()
     optionValue = argv[optionName]
     if optionValue?
       optionValue = Number(optionValue) if value instanceof Number
       parameters[key] = optionValue
   return parameters
 
-requestType = requestTypeName && trainCaseToCamelCase(requestTypeName)
+requestType = requestTypeName && _(requestTypeName).camelize()
 if requestType of RequestTypes
   parameters = RequestTypes[requestType]()
   parameters = mergeCommandLineParameters(parameters)
@@ -56,5 +58,5 @@ else
   console.info 'Usage:'
   cmd = argv.$0.replace(/^coffee\s+/, '')
   for key, optionsFn of RequestTypes
-    console.info ' ', cmd, camelCaseToTrainCase(key), ("--#{camelCaseToTrainCase(option)}=#{util.inspect(v)}" for option, v of optionsFn()).join(' ')
+    console.info ' ', cmd, _(key).dasherize(), ("--#{_(option).dasherize()}=#{util.inspect(v)}" for option, v of optionsFn()).join(' ')
   process.exit()
