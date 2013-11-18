@@ -2,6 +2,7 @@
 
 _ = require 'underscore'
 argv = require('optimist').argv
+util = require 'util'
 _(global).extend require('../lib/utils')
 require('dotenv').load()
 
@@ -38,7 +39,7 @@ mergeCommandLineParameters = (parameters) ->
       parameters[key] = optionValue
   return parameters
 
-requestType = trainCaseToCamelCase(requestTypeName)
+requestType = requestTypeName && trainCaseToCamelCase(requestTypeName)
 if requestType of RequestTypes
   parameters = RequestTypes[requestType]()
   parameters = mergeCommandLineParameters(parameters)
@@ -48,10 +49,12 @@ if requestType of RequestTypes
     parameters: parameters
   }
   if false
-    console.log request
+    console.info request
     process.exit()
   requestsFB.push request, -> process.exit()
 else
-  for name of RequestTypes
-    console.log '  ' + name
+  console.info 'Usage:'
+  cmd = argv.$0.replace(/^coffee\s+/, '')
+  for key, optionsFn of RequestTypes
+    console.info ' ', cmd, camelCaseToTrainCase(key), ("--#{camelCaseToTrainCase(option)}=#{util.inspect(v)}" for option, v of optionsFn()).join(' ')
   process.exit()
