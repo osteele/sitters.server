@@ -1,16 +1,11 @@
 require('dotenv').load()
 _ = require 'underscore'
 Q = require 'q'
-winston = require 'winston'
 
+winston = require 'winston'
 winston.loggers.add 'database',
-  console:
-    colorize: 'true'
-    label: 'database'
-    silent: true
-  file:
-    filename: __dirname + '/../logs/database.log'
-    json: false
+  console: {colorize: true, label: 'database', silent: true}
+  file: {filename: __dirname + '/../logs/database.log', json: false}
 
 Sequelize = require('sequelize-postgres').sequelize
 sequelize = new Sequelize process.env.DATABASE_URL,

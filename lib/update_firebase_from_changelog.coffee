@@ -3,6 +3,10 @@ _ = require 'underscore'
 _(global).extend require('../lib/models')
 _(global).extend require('../lib/firebase')
 
+winston = require 'winston'
+winston.loggers.add 'firebase', console: {colorize: true, label: 'firebase'}
+logger = winston.loggers.get('firebase')
+
 ModelClassesByName = {accounts: Account, families: Family, sitters: Sitter, users: User}
 
 UpdateFunctions =
@@ -29,7 +33,7 @@ exports.updateSomeP = (limit=10) ->
     Q.all(rows.map ({operation, table_name, entity_id}) ->
       tableClass = ModelClassesByName[table_name]
       tableClass.find(entity_id).then((entity) ->
-        console.info 'Update', table_name, '#' + entity_id
+        logger.info 'Update', table_name, '#' + entity_id
         UpdateFunctions[table_name]?(entity)
       ).then ->
         sequelize.query("DELETE FROM change_log WHERE table_name=:table_name AND entity_id=:entity_id", null, {raw:true}, {table_name, entity_id})

@@ -16,7 +16,7 @@ updateFirebaseP = do (fn=require('./lib/update_firebase_from_changelog').updateS
   -> fn()
 
 loggingOptions = {timestamp: true}
-loggingOptions = {colorize: true, timestamp: -> moment().format('H:MM:ss')} if process.env.ENVIRONMENT == 'development'
+loggingOptions = {colorize: true, timestamp: -> moment().format('H:MM:ss')} if process.env.ENVIRONMENT != 'production'
 
 logger = winston
 logger.remove winston.transports.Console
@@ -61,7 +61,6 @@ sendMessageTo = (accountKey, message) ->
   # logger.info "firebaseMessageId = #{firebaseMessageId}"
   accountKeyDeviceTokensP(accountKey).then (tokens) ->
     for token in tokens
-      logger.info "  Push #{message.messageType} -> #{token}"
       pushMessageTo token, alert: message.messageText, payload: message
 
 handlers =
@@ -89,13 +88,13 @@ handlers =
     accountP = Account.find where: {provider_name, provider_user_id}
     deviceP = Device.find where: {token}
     Q.all([accountP, deviceP]).spread((account, device) ->
-      logger.info "Register #{token} for device=#{device} account=#{account}"
+      logger.info "Register device token=#{token} for device=#{device.id} account=#{account.id}"
       return if device and account.user_id == device.user_id
       if device
-        logger.info "Update device #{device}"
+        logger.info "Update device ###{device.id}"
         device.updateAttributes user_id: account.user_id
       else
-        logger.info "Create device"
+        logger.info "Register device"
         Device.create {token, user_id: account.user_id}
     )
 
@@ -122,7 +121,6 @@ handlers =
     Q.delay(delay * 1000).then(->
       Sitter.find(sitterId)
     ).then((sitter) ->
-      logger.info "Sitter(#{sitterId}) = #{sitter.id}"
       return unless sitter
       sendMessageTo accountKey,
         messageType: MessageTypes.sitterConfirmedReservation
