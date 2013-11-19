@@ -19,7 +19,8 @@ UpdateFunctions =
 
   sitters: (sitter) ->
     fb = sittersFB.child(sitter.id)
-    fbSetP fb, sitter.data
+    data = _.extend {id:String(sitter.id)}, sitter.data
+    fbSetP fb, data
 
   families: (family) ->
     familiesFB.child(String(family.id)).child('sitter_ids').set family.sitter_ids
