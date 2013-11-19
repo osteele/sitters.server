@@ -1,5 +1,6 @@
 require('dotenv').load()
 apn = require 'apn'
+path = require 'path'
 util = require 'util'
 
 winston = require 'winston'
@@ -19,6 +20,9 @@ APNErrorText =
   10: 'Shutdown'
   255: 'None (unknown)'
 
+CertificateDirectory = path.join(__dirname, '..', 'config')
+DefaultExpirationHours = 7 * 24
+
 APNServers = do ->
   production = process.env.ENVIRONMENT == 'production'
   gatewayServer = if production then 'gateway.push.apple.com' else 'gateway.sandbox.push.apple.com'
@@ -26,10 +30,11 @@ APNServers = do ->
   { gatewayServer, feedbackServer }
 
 connectionOptions = {
-  # cert: './sitters-dev-cert.pem'
-  # key: './sitters-dev-key.pem'
+  cert: path.join(CertificateDirectory, 'apns-dev-cert.pem')
+  key: path.join(CertificateDirectory, 'apns-dev-key.pem')
   gateway: APNServers.gatewayServer
 }
+console.log  connectionOptions
 connection = new apn.Connection(connectionOptions)
 connection.on 'connected', -> logger.info "Connected"
 connection.on 'transmitted', (notification, device) ->
@@ -46,8 +51,6 @@ feedback.on 'feedback', (devices) ->
     logger.info 'Delivery failure', item.device.token.toString('hex'), item.time
 feedback.on 'feedbackError', (err) -> logger.error err
 logger.info "Polling APN feedback at #{APNServers.feedbackServer}"
-
-DefaultExpirationHours = 7 * 24
 
 pushMessageTo = (token, {alert, payload}) ->
   device = new apn.Device(token)
