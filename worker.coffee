@@ -8,17 +8,17 @@ winston = require 'winston'
 require('dotenv').load()
 Q.longStackSupport = true if process.env.ENVIRONMENT == 'development'
 
+APNS = require('./lib/push')
 _(global).extend require('./lib/models')
-_(global).extend require('./lib/push')
 _(global).extend require('./lib/firebase')
 
+# protect from partial application
 updateFirebaseP = do (fn=require('./lib/update_firebase_from_changelog').updateSomeP) ->
   -> fn()
 
+logger = winston
 loggingOptions = {timestamp: true}
 loggingOptions = {colorize: true, timestamp: -> moment().format('H:MM:ss')} if process.env.ENVIRONMENT != 'production'
-
-logger = winston
 logger.remove winston.transports.Console
 logger.add winston.transports.Console, loggingOptions
 
@@ -58,10 +58,28 @@ MessageTypes =
 sendMessageTo = (accountKey, message) ->
   logger.info "Send -> #{accountKey}:", message
   firebaseMessageId = messagesFB.child(accountKey).push message
+  payload = _.extend {}, message
+  delete payload.messageText
   # logger.info "firebaseMessageId = #{firebaseMessageId}"
   accountKeyDeviceTokensP(accountKey).then (tokens) ->
     for token in tokens
-      pushMessageTo token, alert: message.messageText, payload: message
+      APNS.pushMessageTo token, alert: message.messageText, payload: payload
+
+APNS.connection.on 'transmissionError', (errCode, notification, device) ->
+  return unless errCode == 8 # invalid token
+  token = device.token.toString('hex')
+  logger.info "Removing device token=#{token}"
+  sequelize.query('DELETE FROM devices WHERE token=:token', null, {raw:true}, {token}).then(->
+    logger.info "Deleted token=#{token}"
+  ).done()
+
+# TODO race condition with database initialization
+APNS.feedback.on 'feedback', (devices) ->
+  devices.forEach (item) ->
+    token = item.device.token.toString('hex')
+    sequelize.query('DELETE FROM devices WHERE token=:token AND updated_at < :time', null, {raw:true}, {token, time: item.time}).then(->
+      logger.info "Deleted token=#{token}"
+    ).done()
 
 handlers =
   addSitter: (accountKey, {sitterId, delay}) ->
@@ -87,8 +105,8 @@ handlers =
     [provider_name, provider_user_id] = accountKey.split('/', 2)
     accountP = Account.find where: {provider_name, provider_user_id}
     deviceP = Device.find where: {token}
-    Q.all([accountP, deviceP]).spread((account, device) ->
-      logger.info "Register device token=#{token} for device=#{device.id} account=#{account.id}"
+    Q.all([accountP, deviceP]).spread (account, device) ->
+      logger.info "Register device token=#{token} for device=#{device?.id} account=#{account?.id}"
       return if device and account.user_id == device.user_id
       if device
         logger.info "Update device ###{device.id}"
@@ -96,7 +114,6 @@ handlers =
       else
         logger.info "Register device"
         Device.create {token, user_id: account.user_id}
-    )
 
   registerUser: (accountKey, {displayName, email}) ->
     [provider_name, provider_user_id] = accountKey.split('/', 2)
