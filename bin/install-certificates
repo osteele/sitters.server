@@ -1,0 +1,19 @@
+#!/bin/bash -eu
+
+case "${ENVIRONMENT:=development}" in
+  development)
+    env=dev
+    ;;
+  production)
+    env=prod
+    ;;
+  *)
+    echo "Unknown ENVIRONMENT=$ENVIRONMENT" >& 2
+    exit 1
+    ;;
+esac
+
+config=`dirname $0`/config
+
+echo curl -q https://assets.osteele.com.s3.amazonaws.com/dev/sitters/apns-$env-cert.pem \> $config/apns-$env-cert.pem
+# curl -q https://assets.osteele.com.s3.amazonaws.com/dev/sitters/apns-$env-cert.pem $config/apns-$env-key.pem
