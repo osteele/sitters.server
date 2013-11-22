@@ -19,9 +19,9 @@
   },
   "dependencies": {
     "coffee-script": "~1.6.3",
-    "dotenv": "~0.2.1",
+    "dotenv": "~0.2.3",
     "express": "~3.4.4",
-    "firebase": "~0.6.11",
+    "firebase": "~0.6.17",
     "q": "~0.9.7",
     "underscore": "~1.5.2",
     "optimist": "~0.6.0",
@@ -29,11 +29,11 @@
     "moment": "~2.4.0",
     "sequelize": "~2.0.0-beta.1",
     "sequelize-postgres": "~2.0.0-beta.1",
-    "pg": "~2.8.2",
-    "apn": "~1.4.2"
+    "pg": "~2.8.3",
+    "apn": "~1.4.3"
   },
   "devDependencies": {
-    "grunt": "~0.4.1",
+    "grunt": "~0.4.2",
     "grunt-coffeelint": "~0.0.7",
     "grunt-contrib-watch": "~0.5.3",
     "load-grunt-tasks": "~0.2.0",
