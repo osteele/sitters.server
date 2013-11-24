@@ -34,6 +34,8 @@ exports.updateSomeP = (limit=10) ->
     Q.all(rows.map ({operation, table_name, entity_id}) ->
       tableClass = ModelClassesByName[table_name]
       tableClass.find(entity_id).then((entity) ->
+        logger.info 'Deleted', table_name, '#' + entity_id unless entity
+        return unless entity # TODO delete the fb record
         logger.info 'Update', table_name, '#' + entity_id
         UpdateFunctions[table_name]?(entity)
       ).then ->
