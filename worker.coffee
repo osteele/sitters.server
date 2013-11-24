@@ -7,6 +7,7 @@ winston = require 'winston'
 
 require('dotenv').load()
 Q.longStackSupport = true if process.env.ENVIRONMENT == 'development'
+stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 
 APNS = require('./lib/push')
 _(global).extend require('./lib/models')
@@ -115,12 +116,31 @@ handlers =
         logger.info "Register device"
         Device.create {token, user_id: account.user_id}
 
+  registerPaymentToken: (accountKey, {token}) ->
+    user = null
+    User.findByAccountKey(accountKey).then((user_) ->
+      user = user_
+      logger.info "User=#{user}"
+      return unless user
+      PaymentCustomer.findOrCreate user_id:user.id
+    ).then (customerRow) ->
+      email = user.email
+      metadata = {user_id:user.id}
+      if customerRow?.stripe_customer_id
+        stripe.customers.update customerRow.stripe_customer_id, {email, metadata}
+      else
+        stripe.customers.create({card:token, email, metadata}).then (stripeCustomer) ->
+          logger.info "Customer id=#{stripeCustomer.id}"
+          attrs = {stripe_customer_id:stripeCustomer.id}
+          PaymentCustomer.findOrCreate({user_id:user.id}, attrs).then (customerRow) ->
+            customerRow.updateAttributes attrs
+
   registerUser: (accountKey, {displayName, email}) ->
     [provider_name, provider_user_id] = accountKey.split('/', 2)
-    accountP = Account.findOrCreate({provider_name, provider_user_id})
-    userP = User.findOrCreate({email}, {displayName})
+    accountP = Account.findOrCreate {provider_name, provider_user_id}
+    userP = User.findOrCreate {email}, {displayName}
     Q.all([accountP, userP]).spread (account, user) ->
-      logger.info "Found account key=#{accountKey}" if account
+      logger.info "Account key=#{accountKey}" if account
       # return if user.hasAccount(account)
       Q.all [
         account.updateAttributes user_id: user.id

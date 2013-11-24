@@ -2,7 +2,9 @@
 
 _ = require 'underscore'
 argv = require('optimist').argv
+path = require 'path'
 util = require 'util'
+Q = require 'Q'
 _(global).extend require('../lib/utils')
 _.str = require('underscore.string')
 _.mixin(_.str.exports())
@@ -14,10 +16,18 @@ requestTypeName = argv._[0] # in train-case
 
 TestAccountKey = 'facebook/511404287'
 
-RequestTypes =
+RequestTypeGenerators =
   addSitter: -> {delay: 0, sitterId: 2}
 
-  registerDeviceToken: -> {token: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'}
+  registerDeviceToken: ->
+    {token: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'}
+
+  registerPaymentToken: ->
+    card = {number: '4242424242424242', exp_month: 12, exp_year: 2015, cvc: '123'}
+    return card if this.mode == 'help'
+    stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
+    stripe.tokens.create(card:card).then (token) ->
+      Q {token:token.id}
 
   registerUser: -> {displayName: 'Mom', email: 'mom@host.com'}
 
@@ -42,21 +52,21 @@ mergeCommandLineParameters = (parameters) ->
   return parameters
 
 requestType = requestTypeName && _(requestTypeName).camelize()
-if requestType of RequestTypes
-  parameters = RequestTypes[requestType]()
-  parameters = mergeCommandLineParameters(parameters)
-  request = {
-    requestType: requestType
-    accountKey: TestAccountKey
-    parameters: parameters
-  }
+if requestType of RequestTypeGenerators
+  parameters = RequestTypeGenerators[requestType].call(mode:'run')
+  accountKey = TestAccountKey
   if false
     console.info request
     process.exit()
-  requestsFB.push request, -> process.exit()
+  Q.resolve(parameters).then (parameters) ->
+    parameters = mergeCommandLineParameters(parameters)
+    request = {requestType, accountKey, parameters}
+    requestsFB.push request, -> process.exit()
 else
-  console.info 'Usage:'
-  cmd = argv.$0.replace(/^coffee\s+/, '')
-  for key, optionsFn of RequestTypes
-    console.info ' ', cmd, _(key).dasherize(), ("--#{_(option).dasherize()}=#{util.inspect(v)}" for option, v of optionsFn()).join(' ')
+  programName =  './' + path.relative(process.cwd(), argv.$0.replace(/^coffee\s+/, ''))
+  console.info "Usage: #{programName} COMMAND [OPTIONS]"
+  console.info "Commands:"
+  for key, optionsFn of RequestTypeGenerators
+    options = optionsFn.call(mode:'help')
+    console.info ' ', _(key).dasherize(), ("--#{_(option).dasherize()}=#{util.inspect(v)}" for option, v of options).join(' ')
   process.exit()

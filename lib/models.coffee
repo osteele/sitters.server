@@ -29,6 +29,12 @@ Device = sequelize.define 'devices',
 Family = sequelize.define 'families',
   sitter_ids: Sequelize.ARRAY(Sequelize.INTEGER)
 
+PaymentCustomer = sequelize.define 'payment_customers',
+  stripe_customer_id: Sequelize.STRING
+# PaymentCustomer.findByAccountKey = (accountKey) ->
+#   sequelize.query(SelectDeviceTokensForAccountKeySQL, PaymentCustomer, {}, {accountKey}).then (rows) ->
+    # Q rows[0]
+
 Sitter = sequelize.define 'sitters', {
   data:
     type: Sequelize.TEXT
@@ -42,11 +48,21 @@ Sitter = sequelize.define 'sitters', {
 User = sequelize.define 'users',
   displayName: Sequelize.STRING
   email: {type: Sequelize.STRING, index: true, unique: true}
+User.findByAccountKey = (accountKey) ->
+  [provider_name, provider_user_id] = accountKey.split('/', 2)
+  sequelize.query('SELECT * FROM users JOIN accounts ON users.id=accounts.user_id WHERE provider_name=:provider_name AND provider_user_id=:provider_user_id', User, {}, {provider_name, provider_user_id}).then (rows) ->
+    # console.log 'rows =', rows
+    # console.log 'rows[0] =', rows[0]
+    return rows[0]
 
 Account.belongsTo User
+PaymentCustomer.belongsTo User
+
 Family.hasMany User
+
 User.hasMany Account
 User.hasMany Device
+
 # migration.addIndex('Person', ['firstname', 'lastname'])
 
 SelectDeviceTokensForAccountKeySQL = """
@@ -102,6 +118,7 @@ module.exports = {
   Account
   Device
   Family
+  PaymentCustomer
   Sitter
   User
   accountKeyDeviceTokensP
