@@ -11,7 +11,10 @@ stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 
 APNS = require('./lib/push')
 _(global).extend require('./lib/models')
-_(global).extend require('./lib/firebase')
+firebase = require('./lib/firebase')
+_(global).extend firebase
+
+firebase.authenticateAs {}, {admin:true}
 
 # protect from partial application
 updateFirebaseP = do (fn=require('./lib/update_firebase_from_changelog').updateSomeP) ->

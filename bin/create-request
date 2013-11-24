@@ -10,11 +10,14 @@ _.str = require('underscore.string')
 _.mixin(_.str.exports())
 require('dotenv').load()
 
-{requestsFB} = require '../lib/firebase'
+{requestsFB, authenticateAs} = require '../lib/firebase'
 
 requestTypeName = argv._[0] # in train-case
 
 TestAccountKey = 'facebook/511404287'
+do ->
+  [provider, id] = TestAccountKey.split('/')
+  authenticateAs {provider, id}
 
 RequestTypeGenerators =
   addSitter: -> {delay: 0, sitterId: 2}

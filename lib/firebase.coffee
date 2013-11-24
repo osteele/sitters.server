@@ -1,10 +1,23 @@
-Firebase = require('firebase')
 Q = require 'Q'
+Firebase = require('firebase')
+FirebaseTokenGenerator = require("firebase-token-generator")
+tokenGenerator = new FirebaseTokenGenerator(process.env.FIREBASE_SECRET)
 
 rootFB = new Firebase('https://sevensitters.firebaseIO.com/')
 environmentFB = rootFB.child(process.env.ENVIRONMENT || 'development')
 
+authenticateAs = (data, options) ->
+  data ?= {}
+  options ?= {}
+  token = tokenGenerator.createToken(data, options)
+  rootFB.auth token, (error, result) ->
+    console.error 'error', error if error
+    # console.info 'result', result unless error
+  , (error) ->
+    authenticateAs(data, options)
+
 module.exports = {
+  authenticateAs
   rootFB
   environmentFB
 
