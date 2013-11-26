@@ -1,0 +1,14 @@
+#!/usr/bin/env coffee
+
+exec = require('child_process').exec
+kexec = require('kexec')
+
+exec 'heroku config | egrep ^DATABASE_URL', (error, stdout, stderr) ->
+    if error
+      console.error 'exec error: ' + error
+      process.exit 1
+    url = stdout.match(/\DATABASE_URL:\s*(.*)/)[1]
+    [__, user, password, host, port, database] = url.match(/^postgres:\/\/(.+?):(.+?)@(.+?):(.+?)\/(.+?)$/)
+    process.env.PGPASSWORD = password
+    console.log "psql -h #{host} -p #{port} -U #{user} -d #{database}"
+    kexec "psql -h #{host} -p #{port} -U #{user} -d #{database}"
