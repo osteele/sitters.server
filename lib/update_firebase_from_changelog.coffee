@@ -1,4 +1,4 @@
-Q = require 'Q'
+Q = require 'q'
 _ = require 'underscore'
 require('../lib/utils')
 _(global).extend require('../lib/models')

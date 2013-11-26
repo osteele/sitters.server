@@ -6,7 +6,7 @@ argv = require('optimist').argv
 fs = require 'fs'
 path = require 'path'
 util = require 'util'
-Q = require 'Q'
+Q = require 'q'
 _.str = require('underscore.string')
 _.mixin _.str.exports()
 

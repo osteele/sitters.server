@@ -1,4 +1,4 @@
-Q = require 'Q'
+Q = require 'q'
 Firebase = require('firebase')
 FirebaseTokenGenerator = require("firebase-token-generator")
 tokenGenerator = new FirebaseTokenGenerator(process.env.FIREBASE_SECRET)
