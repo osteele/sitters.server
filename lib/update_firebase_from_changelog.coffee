@@ -1,29 +1,47 @@
 Q = require 'Q'
 _ = require 'underscore'
+require('../lib/utils')
 _(global).extend require('../lib/models')
 _(global).extend require('../lib/firebase')
 
 winston = require 'winston'
-winston.loggers.add 'firebase', console: {colorize: true, label: 'firebase'}
-logger = winston.loggers.get('firebase')
+logger = winston.loggers.add 'firebase-push', console: {colorize: true, label: '→ firebase'}
 
-ModelClassesByName = {accounts: Account, families: Family, sitters: Sitter, users: User}
+ModelClassesByName = {}.tap (dict) ->
+  models = [Account, Family, PaymentCustomer, Sitter, User]
+  models.forEach (model) =>
+    this[model.tableName] = model
+
+getAccountFB = (account) ->
+  accountsFB.child(account.firebaseKey)
 
 UpdateFunctions =
   accounts: (account) ->
     account.getUser().then (user) ->
-      fb = accountsFB.child(account.firebaseKey).child('family_id')
+      fb = getAccountFB(account).child('family_id')
       fbOnceP(fb).then (snapshot) ->
         unless snapshot.val() == user.family_id
           fbSetP fb, user.family_id
+
+  families: (family) ->
+    fbSetP familiesFB.child(String(family.id)).child('sitter_ids'), family.sitter_ids
+
+  payment_customers: (paymentCustomer) ->
+    paymentCustomer.getUser().then((user) ->
+      logger.info "→ User ##{user?.id}"
+      user.getAccounts()
+    ).then((accounts) ->
+      # logger.info "User.accounts.length=#{accounts.length}"
+      Q.all accounts.map (account) ->
+        logger.info "→ Account ##{account.id}"
+        console.log "puts #{getAccountFB(account).child('cardInfo')} #{paymentCustomer.card_info}"
+        fbSetP getAccountFB(account).child('cardInfo'), paymentCustomer.card_info
+    )
 
   sitters: (sitter) ->
     fb = sittersFB.child(sitter.id)
     data = _.extend {id:String(sitter.id)}, sitter.data
     fbSetP fb, data
-
-  families: (family) ->
-    familiesFB.child(String(family.id)).child('sitter_ids').set family.sitter_ids
 
   users: (user) ->
     user.getAccounts().then (accounts) ->
@@ -33,6 +51,9 @@ exports.updateSomeP = (limit=10) ->
   sequelize.query("SELECT DISTINCT table_name, entity_id FROM change_log LIMIT :limit", null, {raw:true}, {limit}).then (rows) ->
     Q.all(rows.map ({operation, table_name, entity_id}) ->
       tableClass = ModelClassesByName[table_name]
+      unless tableClass
+        logger.warn "No update method for table #{table_name}"
+        return
       tableClass.find(entity_id).then((entity) ->
         logger.info 'Deleted', table_name, '#' + entity_id unless entity
         return unless entity # TODO delete the fb record

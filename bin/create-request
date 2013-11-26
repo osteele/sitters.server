@@ -1,49 +1,69 @@
 #!/usr/bin/env coffee
 
+require('dotenv').load()
 _ = require 'underscore'
 argv = require('optimist').argv
+fs = require 'fs'
 path = require 'path'
 util = require 'util'
 Q = require 'Q'
-_(global).extend require('../lib/utils')
 _.str = require('underscore.string')
-_.mixin(_.str.exports())
-require('dotenv').load()
+_.mixin _.str.exports()
 
-{requestsFB, authenticateAs} = require '../lib/firebase'
+stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
+
+firebase = require '../lib/firebase'
+_(global).extend require('../lib/utils')
+
+Date.prototype.setToBeginningOfHour = (hour) ->
+  @setHours hour if hour?
+  @setMinutes 0
+  @setSeconds 0
+  @setMilliseconds 0
+
+Defaults = {
+  accountKey: 'facebook/511404287'
+  cardInfo: {cardType:'American Express', number:'4242424242424242', expirationMonth:12, expirationYear:2015, cvc:'123'}
+  deviceToken: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
+  sitterCount: 2
+  sitterId: 2
+  sitterResponseDelay: 0
+  sitterStartTime: new Date().tap -> @setToBeginningOfHour(18)
+  sitterEndTime: new Date().tap -> @setToBeginningOfHour(22)
+  userName: 'Mom'
+  userEmail: 'mom@host.com'
+}
+
+do ->
+  [provider, id] = Defaults.accountKey.split('/', 2)
+  firebase.authenticateAs {provider, id}
 
 requestTypeName = argv._[0] # in train-case
 
-TestAccountKey = 'facebook/511404287'
-do ->
-  [provider, id] = TestAccountKey.split('/')
-  authenticateAs {provider, id}
-
 RequestTypeGenerators =
-  addSitter: -> {delay: 0, sitterId: 2}
+  addSitter: -> {delay:Defaults.sitterResponseDelay, sitterId:Defaults.sitterId}
 
   registerDeviceToken: ->
-    {token: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'}
+    {token: Defaults.deviceToken}
 
   registerPaymentToken: ->
-    card = {number: '4242424242424242', exp_month: 12, exp_year: 2015, cvc: '123'}
-    return card if this.mode == 'help'
-    stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
-    stripe.tokens.create(card:card).then (token) ->
-      Q {token:token.id}
+    cardInfo = Defaults.cardInfo
+    return cardInfo if this.mode == 'help'
+    stripeCardInfo = {number:cardInfo.number, exp_month:cardInfo.expirationMonth, exp_year:cardInfo.expirationYear, cvc:cardInfo.cvc}
+    stripe.tokens.create(card:stripeCardInfo).then (response) ->
+      cardInfo = _.extend {}, cardInfo, {last4:cardInfo.number.match(/(.{4})$/)[1]}
+      Q {token:response.id, cardInfo}
 
-  registerUser: -> {displayName: 'Mom', email: 'mom@host.com'}
+  registerUser: -> {displayName:Defaults.userName, email:Defaults.userEmail}
+
+  removePaymentCard: -> {}
 
   reserveSitter: ->
-    startTime = new Date().tap -> @.setHours 18
-    endTime = new Date().tap -> @.setHours 22
-    [startTime, endTime].forEach (date) ->
-      date.setMinutes 0
-      date.setSeconds 0
-      date.setMilliseconds 0
-    {delay: 0, sitterId: 2, startTime: startTime.toISOString(), endTime: endTime.toISOString()}
+    startTime = Defaults.sitterStartTime
+    endTime = Defaults.sitterEndTime
+    {delay:Defaults.sitterResponseDelay, sitterId:Defaults.sitterId, startTime:startTime.toISOString(), endTime:endTime.toISOString()}
 
-  setSitterCount: -> {count: 2}
+  setSitterCount: -> {count:Defaults.sitterCount}
 
 mergeCommandLineParameters = (parameters) ->
   for key, value of parameters
@@ -57,14 +77,15 @@ mergeCommandLineParameters = (parameters) ->
 requestType = requestTypeName && _(requestTypeName).camelize()
 if requestType of RequestTypeGenerators
   parameters = RequestTypeGenerators[requestType].call(mode:'run')
-  accountKey = TestAccountKey
+  accountKey = Defaults.accountKey
   if false
     console.info request
     process.exit()
-  Q.resolve(parameters).then (parameters) ->
+  Q.resolve(parameters).then((parameters) ->
     parameters = mergeCommandLineParameters(parameters)
     request = {requestType, accountKey, parameters}
-    requestsFB.push request, -> process.exit()
+    firebase.requestsFB.push request, -> process.exit()
+  ).done()
 else
   programName =  './' + path.relative(process.cwd(), argv.$0.replace(/^coffee\s+/, ''))
   console.info "Usage: #{programName} COMMAND [OPTIONS]"
