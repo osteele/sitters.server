@@ -33,8 +33,8 @@ ON accounts
 DROP TRIGGER IF EXISTS log_row_change ON payment_customers;
 CREATE TRIGGER log_row_change
 AFTER INSERT OR UPDATE OR DELETE
-ON accounts
-  FOR EACH ROW EXECUTE PROCEDURE payment_customers();
+ON payment_customers
+  FOR EACH ROW EXECUTE PROCEDURE log_row_change();
 
 DROP TRIGGER IF EXISTS log_row_change ON families;
 CREATE TRIGGER log_row_change
