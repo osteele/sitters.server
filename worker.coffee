@@ -78,7 +78,7 @@ Firebase.authenticateAs {}, {admin:true}
 
 # protect from partial application
 updateFirebaseFromDatabaseP = do ->
-  fn = require('./lib/update_firebase_from_changelog').updateSomeP
+  fn = require('./lib/push_to_firebase').updateSomeP
   -> fn()
 
 

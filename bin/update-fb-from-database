@@ -6,7 +6,7 @@ Q.longStackSupport = true
 
 # _(global).extend require('../lib/utils')
 
-{updateSomeP, updateAllP} = require('../lib/update_firebase_from_changelog')
+{updateSomeP, updateAllP} = require('../lib/push_to_firebase')
 
 updateAllP().then((count) ->
   console.log 'Updated', count, 'entities'
