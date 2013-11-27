@@ -1,7 +1,7 @@
 require('dotenv').load()
 _ = require 'underscore'
 Q = require 'q'
-Q.longStackSupport = true unless process.env.ENVIRONMENT == 'production' and not process.env.DEBUG_SERVER
+Q.longStackSupport = true unless process.env.NODE_ENV == 'production' and not process.env.DEBUG_SERVER
 util = require 'util'
 moment = require 'moment'
 stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
@@ -14,7 +14,7 @@ _(global).extend require('./lib/models')
 
 Winston = require 'winston'
 loggerConsoleOptions = {colorize:true, label:'workers'}
-loggerConsoleOptions = {timestamp:true} if process.env.ENVIRONMENT == 'production'
+loggerConsoleOptions = {timestamp:true} if process.env.NODE_ENV == 'production'
 # loggerConsoleOptions.timestamp = -> moment().format('H:MM:ss')
 logger = Winston.loggers.add 'workers', console:loggerConsoleOptions
 
@@ -23,12 +23,24 @@ logger = Winston.loggers.add 'workers', console:loggerConsoleOptions
 # Raven / Sentry
 #
 
-raven = require('raven')
-RavenClient = new raven.Client(process.env.SENTRY_DSN, stackFunction:Error.prepareStackTrace)
-RavenClient.patchGlobal ->
-  logger.error 'Exiting'
-  process.exit 1
-logger.info 'Raven connection to', process.env.SENTRY_DSN
+# raven = require('raven')
+# RavenClient = new raven.Client(process.env.SENTRY_DSN, stackFunction:Error.prepareStackTrace)
+# RavenClient.patchGlobal ->
+#   logger.error 'Exiting'
+#   process.exit 1
+# logger.info 'Raven connection to', process.env.SENTRY_DSN
+
+#
+# Rollbar
+#
+
+if process.env.ROLLBAR_ACCESS_TOKEN
+  rollbar = require 'rollbar'
+  rollbar.init process.env.ROLLBAR_ACCESS_TOKEN
+  # rollbar.handleUncaughtExceptions()
+else
+  rollbar =
+    reportMessage: ->
 
 #
 # APNS
@@ -120,7 +132,8 @@ RequestFB.on 'child_added', (snapshot) ->
     RequestFB.child(key).remove()
 
 processRequest = (request) ->
-  RavenClient.captureMessage requestType
+  # RavenClient.captureMessage requestType
+  rollbar.reportMessage "Process #{requestType}", 'info'
   {accountKey, requestType, parameters} = request
   parameters ||= {}
   logger.info "Processing request #{requestType} from #{accountKey} with #{JSON.stringify(parameters).replace(/"(\w+)":/g, '$1:')}"
@@ -240,5 +253,8 @@ RequestHandlers =
       return _.uniq(sitter_ids.concat([1..7]))[0...count]
 
   simulateServerError: ->
-    return unless process.env.DEBUG_SERVER
+    if process.env.NODE_ENV == 'production' and not process.env.DEBUG_SERVER
+      logger.info "Ignoring simulated server error"
+      return
     Q.delay(1).then ->
+      {}.undefinedMethod()

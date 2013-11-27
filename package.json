@@ -33,7 +33,7 @@
     "pg": "~2.8.3",
     "apn": "~1.4.3",
     "stripe": "~2.2.2",
-    "raven": "~0.6.0"
+    "rollbar": "~0.2.8"
   },
   "devDependencies": {
     "grunt": "~0.4.2",
