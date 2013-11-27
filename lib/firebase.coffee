@@ -1,25 +1,23 @@
 Q = require 'q'
 Firebase = require('firebase')
 FirebaseTokenGenerator = require("firebase-token-generator")
-tokenGenerator = new FirebaseTokenGenerator(process.env.FIREBASE_SECRET)
+TokenGenerator = new FirebaseTokenGenerator(process.env.FIREBASE_SECRET)
 
-rootFB = new Firebase('https://sevensitters.firebaseIO.com/')
-environmentFB = rootFB.child(process.env.ENVIRONMENT || 'development')
+FirebaseRoot = new Firebase('https://sevensitters.firebaseIO.com/')
+EnvironmentFB = FirebaseRoot.child(process.env.ENVIRONMENT || 'development')
 
-authenticateAs = (data, options) ->
-  data ?= {}
-  options ?= {}
-  token = tokenGenerator.createToken(data, options)
-  rootFB.auth token, (error, result) ->
+authenticateAs = (data={}, options={}) ->
+  token = TokenGenerator.createToken(data, options)
+  FirebaseRoot.auth token, (error, result) ->
     console.error 'error', error if error
-    # console.info 'result', result unless error
   , (error) ->
     authenticateAs(data, options)
 
 module.exports = {
+  FirebaseRoot
+  EnvironmentFB
+
   authenticateAs
-  rootFB
-  environmentFB
 
   fbOnP: (fb, eventType='value') ->
     deferred = Q.defer()
@@ -38,10 +36,12 @@ module.exports = {
     fb.set value, -> deferred.resolve()
     return deferred.promise
 
-  requestsFB: environmentFB.child('request')
-  messagesFB: environmentFB.child('message')
+  # Request and response queues
+  RequestFB: EnvironmentFB.child('request')
+  MessageFB: EnvironmentFB.child('message')
 
-  accountsFB: environmentFB.child('account')
-  familiesFB: environmentFB.child('family')
-  sittersFB: environmentFB.child('sitter')
+  # Entities
+  AccountFB: EnvironmentFB.child('account')
+  FamilyFB: EnvironmentFB.child('family')
+  SitterFB: EnvironmentFB.child('sitter')
 }

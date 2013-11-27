@@ -1,7 +1,7 @@
 require('dotenv').load()
 _ = require 'underscore'
 Q = require 'q'
-Q.longStackSupport = true if process.env.ENVIRONMENT == 'development'
+Q.longStackSupport = true #if process.env.ENVIRONMENT == 'development'
 util = require 'util'
 moment = require 'moment'
 stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
@@ -21,12 +21,11 @@ Raven.patchGlobal()
 # Logging
 #
 
-winston = require 'winston'
-logger = winston
+Winston = require 'winston'
 loggingOptions = {timestamp:true}
-loggingOptions = {colorize:true} if process.env.ENVIRONMENT != 'production'
+loggingOptions = {colorize:true, label:'workers'} if process.env.ENVIRONMENT != 'production'
 # loggingOptions = {colorize:true, timestamp: -> moment().format('H:MM:ss')} if process.env.ENVIRONMENT != 'production'
-logger = winston.loggers.add 'firebase', console:loggingOptions
+logger = Winston.loggers.add 'workers', console:loggingOptions
 
 
 #
@@ -42,7 +41,7 @@ APNS = require('./lib/push')
 #   parameters: Hash -- client interprets message against this
 sendMessageTo = (accountKey, message) ->
   logger.info "Send -> #{accountKey}:", message
-  firebaseMessageId = messagesFB.child(accountKey).push message
+  firebaseMessageId = MessageFB.child(accountKey).push message
   payload = _.extend {}, message
   delete payload.messageText
   # logger.info "firebaseMessageId = #{firebaseMessageId}"
@@ -71,9 +70,9 @@ APNS.feedback.on 'feedback', (devices) ->
 # Firebase
 #
 
-firebase = require('./lib/firebase')
-_(global).extend firebase
-firebase.authenticateAs {}, {admin:true}
+Firebase = require('./lib/firebase')
+_(global).extend Firebase
+Firebase.authenticateAs {}, {admin:true}
 
 # protect from partial application
 updateFirebaseFromDatabaseP = do ->
@@ -91,15 +90,15 @@ ResponseTypes =
 
 DefaultSitterConfirmationDelay = 20
 
-logger.info "Polling #{requestsFB}"
+logger.info "Polling #{RequestFB}"
 
-requestsFB.on 'child_added', (snapshot) ->
+RequestFB.on 'child_added', (snapshot) ->
   key = snapshot.name()
   request = snapshot.val()
   try
     processRequest request
   finally
-    requestsFB.child(key).remove()
+    RequestFB.child(key).remove()
 
 processRequest = (request) ->
   Raven.captureMessage requestType
@@ -117,11 +116,14 @@ processRequest = (request) ->
 RequestHandlers =
   addSitter: (accountKey, {sitterId, delay}) ->
     delay ?= DefaultSitterConfirmationDelay
-    Q.delay(delay * 1000).then(-> updateSitterListP(accountKey, (sitter_ids) ->
+    Q.delay(delay * 1000
+    ).then(->
+      updateSitterListP accountKey, (sitter_ids)
+    ).then( ->
       logger.info "Adding sitter", sitterId, "to", sitter_ids
       return if sitterId in sitter_ids
       return sitter_ids.concat([sitterId])
-    )).then((modified) ->
+    ).then((modified) ->
       logger.info "Sitter was already added" unless modified
       return unless modified
       Sitter.find(sitterId)
@@ -131,7 +133,7 @@ RequestHandlers =
         messageType: ResponseTypes.sitterAcceptedConnection
         messageTitle: 'Sitter Confirmed'
         messageText: "#{sitter.firstName} has accepted your request. We’ve added her to your Seven Sitters."
-        parameters: {sitterId: sitterId}
+        parameters: {sitterId}
     )
 
   registerDeviceToken: (accountKey, {token}) ->

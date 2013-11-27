@@ -13,7 +13,7 @@ ModelClassesByName = {}.tap (dict) ->
     this[model.tableName] = model
 
 getAccountFB = (account) ->
-  accountsFB.child(account.firebaseKey)
+  AccountFB.child(account.firebaseKey)
 
 UpdateFunctions =
   accounts: (account) ->
@@ -24,7 +24,7 @@ UpdateFunctions =
           fbSetP fb, user.family_id
 
   families: (family) ->
-    fbSetP familiesFB.child(String(family.id)).child('sitter_ids'), family.sitter_ids
+    fbSetP FamilyFB.child(String(family.id)).child('sitter_ids'), family.sitter_ids
 
   payment_customers: (paymentCustomer) ->
     paymentCustomer.getUser().then((user) ->
@@ -39,7 +39,7 @@ UpdateFunctions =
     )
 
   sitters: (sitter) ->
-    fb = sittersFB.child(sitter.id)
+    fb = SitterFB.child(sitter.id)
     data = _.extend {id:String(sitter.id)}, sitter.data
     fbSetP fb, data
 

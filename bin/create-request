@@ -23,7 +23,7 @@ Date.prototype.setToBeginningOfHour = (hour) ->
 
 Defaults = {
   accountKey: 'facebook/511404287'
-  cardInfo: {cardType:'American Express', number:'4242424242424242', expirationMonth:12, expirationYear:2015, cvc:'123'}
+  cardInfo: {cardType:'Visa', number:'4242424242424242', expirationMonth:12, expirationYear:2015, cvc:'123'}
   deviceToken: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
   sitterCount: 2
   sitterId: 2
@@ -84,7 +84,7 @@ if requestType of RequestTypeGenerators
   Q.resolve(parameters).then((parameters) ->
     parameters = mergeCommandLineParameters(parameters)
     request = {requestType, accountKey, parameters}
-    firebase.requestsFB.push request, -> process.exit()
+    firebase.RequestFB.push request, -> process.exit()
   ).done()
 else
   programName =  './' + path.relative(process.cwd(), argv.$0.replace(/^coffee\s+/, ''))
