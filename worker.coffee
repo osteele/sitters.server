@@ -9,6 +9,15 @@ _(global).extend require('./lib/models')
 
 
 #
+# Raven
+#
+
+raven = require('raven')
+Raven = new raven.Client(process.env.SENTRY_DSN)
+Raven.patchGlobal()
+
+
+#
 # Logging
 #
 
@@ -80,22 +89,23 @@ ResponseTypes =
   sitterConfirmedReservation: 'sitterConfirmedReservation'
   sitterAcceptedConnection: 'sitterAcceptedConnection'
 
+DefaultSitterConfirmationDelay = 20
+
 logger.info "Polling #{requestsFB}"
 
 requestsFB.on 'child_added', (snapshot) ->
   key = snapshot.name()
-  message = snapshot.val()
-  {accountKey, requestType, parameters} = message
-  parameters ||= {}
-  logger.info "Processing request #{requestType} from #{accountKey} with #{JSON.stringify(parameters).replace(/"(\w+)":/g, '$1:')}"
+  request = snapshot.val()
   try
-    handleRequestFrom accountKey, requestType, parameters
-  # catch err
-    # logger.error err
+    processRequest request
   finally
     requestsFB.child(key).remove()
 
-handleRequestFrom = (accountKey, requestType, parameters) ->
+processRequest = (request) ->
+  Raven.captureMessage requestType
+  {accountKey, requestType, parameters} = request
+  parameters ||= {}
+  logger.info "Processing request #{requestType} from #{accountKey} with #{JSON.stringify(parameters).replace(/"(\w+)":/g, '$1:')}"
   handler = RequestHandlers[requestType]
   unless handler
     logger.error "Unknown request type #{requestType}"
@@ -103,8 +113,6 @@ handleRequestFrom = (accountKey, requestType, parameters) ->
   promise = handler(accountKey, parameters)
   promise = promise.then(updateFirebaseFromDatabaseP)
   promise.done()
-
-DefaultSitterConfirmationDelay = 20
 
 RequestHandlers =
   addSitter: (accountKey, {sitterId, delay}) ->
