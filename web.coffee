@@ -7,6 +7,9 @@ app.use express.logger()
 app.get '/', (request, response) ->
   response.send 'Go home!'
 
+app.get '/health', (request, response) ->
+  response.send 'OK'
+
 app.get '/ping', (request, response) ->
   response.send 'OK'
 
