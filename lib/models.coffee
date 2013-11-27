@@ -8,10 +8,10 @@ Q = require 'q'
 #
 
 winston = require 'winston'
-loggerOptions =
-  console: {colorize:true, label:'database', silent:true}
-  file: {filename: __dirname + '/../logs/database.log', json: false}
-loggerOptions = {console: {colorize:true, label:'database'}} if process.env.NODE_ENV == 'production'
+loggerOptions = {console: {colorize:true, label:'database'}}
+if process.env.NODE_ENV != 'production'
+  loggerOptions.console.silent = false
+  loggerOptions.file = {filename:__dirname + '/../logs/database.log', json:false}
 logger = winston.loggers.add 'database', loggerOptions
 
 

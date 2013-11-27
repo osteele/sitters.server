@@ -13,10 +13,10 @@ _(global).extend require('./lib/models')
 #
 
 Winston = require 'winston'
-loggingOptions = {timestamp:true}
-loggingOptions = {colorize:true, label:'workers'} if process.env.ENVIRONMENT != 'production'
-# loggingOptions = {colorize:true, timestamp: -> moment().format('H:MM:ss')} if process.env.ENVIRONMENT != 'production'
-logger = Winston.loggers.add 'workers', console:loggingOptions
+loggerConsoleOptions = {colorize:true, label:'workers'}
+loggerConsoleOptions = {timestamp:true} if process.env.ENVIRONMENT == 'production'
+# loggerConsoleOptions.timestamp = -> moment().format('H:MM:ss')
+logger = Winston.loggers.add 'workers', console:loggerConsoleOptions
 
 
 #
@@ -24,11 +24,11 @@ logger = Winston.loggers.add 'workers', console:loggingOptions
 #
 
 raven = require('raven')
-Raven = new raven.Client(process.env.SENTRY_DSN, stackFunction:Error.prepareStackTrace)
-Raven.patchGlobal ->
+RavenClient = new raven.Client(process.env.SENTRY_DSN, stackFunction:Error.prepareStackTrace)
+RavenClient.patchGlobal ->
   logger.error 'Exiting'
   process.exit 1
-
+logger.info 'Raven connection to', process.env.SENTRY_DSN
 
 #
 # APNS
@@ -120,7 +120,7 @@ RequestFB.on 'child_added', (snapshot) ->
     RequestFB.child(key).remove()
 
 processRequest = (request) ->
-  Raven.captureMessage requestType
+  RavenClient.captureMessage requestType
   {accountKey, requestType, parameters} = request
   parameters ||= {}
   logger.info "Processing request #{requestType} from #{accountKey} with #{JSON.stringify(parameters).replace(/"(\w+)":/g, '$1:')}"
