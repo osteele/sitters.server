@@ -65,6 +65,8 @@ RequestTypeGenerators =
 
   setSitterCount: -> {count:Defaults.sitterCount}
 
+  simulateServerError: -> {}
+
 mergeCommandLineParameters = (parameters) ->
   for key, value of parameters
     optionName = _(key).underscored()

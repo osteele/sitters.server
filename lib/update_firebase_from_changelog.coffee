@@ -5,7 +5,7 @@ _(global).extend require('../lib/models')
 _(global).extend require('../lib/firebase')
 
 winston = require 'winston'
-logger = winston.loggers.add 'firebase-push', console: {colorize: true, label: '→ firebase'}
+logger = winston.loggers.add 'firebase-push', console: {colorize: true, label: '→firebase'}
 
 ModelClassesByName = {}.tap (dict) ->
   models = [Account, Family, PaymentCustomer, Sitter, User]

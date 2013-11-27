@@ -1,20 +1,11 @@
 require('dotenv').load()
 _ = require 'underscore'
 Q = require 'q'
-Q.longStackSupport = true #if process.env.ENVIRONMENT == 'development'
+Q.longStackSupport = true unless process.env.ENVIRONMENT == 'production' and not process.env.DEBUG_SERVER
 util = require 'util'
 moment = require 'moment'
 stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 _(global).extend require('./lib/models')
-
-
-#
-# Raven
-#
-
-raven = require('raven')
-Raven = new raven.Client(process.env.SENTRY_DSN)
-Raven.patchGlobal()
 
 
 #
@@ -26,6 +17,17 @@ loggingOptions = {timestamp:true}
 loggingOptions = {colorize:true, label:'workers'} if process.env.ENVIRONMENT != 'production'
 # loggingOptions = {colorize:true, timestamp: -> moment().format('H:MM:ss')} if process.env.ENVIRONMENT != 'production'
 logger = Winston.loggers.add 'workers', console:loggingOptions
+
+
+#
+# Raven / Sentry
+#
+
+raven = require('raven')
+Raven = new raven.Client(process.env.SENTRY_DSN, stackFunction:Error.prepareStackTrace)
+Raven.patchGlobal ->
+  logger.error 'Exiting'
+  process.exit 1
 
 
 #
@@ -81,14 +83,31 @@ updateFirebaseFromDatabaseP = do ->
 
 
 #
+# Client Messages
+#
+
+SendClientMessage =
+  sitterAcceptedConnection: (accountKey, {sitter}) ->
+      sendMessageTo accountKey,
+        messageType: 'sitterAcceptedConnection'
+        messageTitle: 'Sitter Confirmed'
+        messageText: "#{sitter.firstName} has accepted your request. We’ve added her to your Seven Sitters."
+        parameters: {sitterId}
+
+  sitterConfirmedReservation: (accountKey, {sitter, startTime, endTime}) ->
+      sendMessageTo accountKey,
+        messageType: 'sitterConfirmedReservation'
+        messageTitle: 'Sitter Confirmed'
+        messageText: "#{sitter.firstName} has confirmed your request."
+        parameters: {sitterId, startTime:startTime.toISOString(), endTime:endTime.toISOString()}
+
+
+#
 # Request Handling
 #
 
-ResponseTypes =
-  sitterConfirmedReservation: 'sitterConfirmedReservation'
-  sitterAcceptedConnection: 'sitterAcceptedConnection'
-
 DefaultSitterConfirmationDelay = 20
+MaxSitterCount = 7
 
 logger.info "Polling #{RequestFB}"
 
@@ -116,24 +135,22 @@ processRequest = (request) ->
 RequestHandlers =
   addSitter: (accountKey, {sitterId, delay}) ->
     delay ?= DefaultSitterConfirmationDelay
+    sitter = null
     Q.delay(delay * 1000
     ).then(->
-      updateSitterListP accountKey, (sitter_ids)
-    ).then( ->
-      logger.info "Adding sitter", sitterId, "to", sitter_ids
-      return if sitterId in sitter_ids
-      return sitter_ids.concat([sitterId])
+      Sitter.find(sitterId)
+    ).then((sitter_) ->
+      sitter = sitter_
+      logger.error "Unknown sitter ##{sitterId}"
+      return unless sitter
+      updateSitterListP accountKey, (sitter_ids) ->
+        logger.info "Adding sitter", sitterId, "to", sitter_ids
+        return if sitterId in sitter_ids
+        return sitter_ids.concat([sitterId])
     ).then((modified) ->
       logger.info "Sitter was already added" unless modified
       return unless modified
-      Sitter.find(sitterId)
-    ).then((sitter) ->
-      return unless sitter
-      sendMessageTo accountKey,
-        messageType: ResponseTypes.sitterAcceptedConnection
-        messageTitle: 'Sitter Confirmed'
-        messageText: "#{sitter.firstName} has accepted your request. We’ve added her to your Seven Sitters."
-        parameters: {sitterId}
+      SendClientMessage.sitterAcceptedConnection accountKey, {sitter}
     )
 
   registerDeviceToken: (accountKey, {token}) ->
@@ -185,7 +202,7 @@ RequestHandlers =
         Family.find(user.family_id).then (family) ->
           return if family
           Family.create({sitter_ids: '{}'}).then (family) ->
-            user.updateAttributes(family_id:family.id)
+            user.updateAttributes family_id:family.id
       ]
 
   removePaymentCard: (accountKey, {}) ->
@@ -196,13 +213,13 @@ RequestHandlers =
     ).then (customerRow) ->
       customerId = customerRow?.stripe_customer_id
       return unless customerId
+      removeCardInfo = -> customerRow.updateAttributes card_info:{}
       stripe.customers.retrieve(customerId).then (customer) ->
         cardId = customer.cards.data[0]?.id
         if cardId
-          stripe.customers.deleteCard(customerId, cardId).then ->
-            customerRow.updateAttributes card_info:{}
+          stripe.customers.deleteCard(customerId, cardId).then removeCardInfo
         else
-          customerRow.updateAttributes card_info:{}
+          removeCardInfo()
 
   reserveSitter: (accountKey, {sitterId, startTime, endTime, delay}) ->
     delay ?= DefaultSitterConfirmationDelay
@@ -211,16 +228,17 @@ RequestHandlers =
     Q.delay(delay * 1000).then(->
       Sitter.find(sitterId)
     ).then((sitter) ->
+      logger.error "Unknown sitter ##{sitterId}"
       return unless sitter
-      sendMessageTo accountKey,
-        messageType: ResponseTypes.sitterConfirmedReservation
-        messageTitle: 'Sitter Confirmed'
-        messageText: "#{sitter.firstName} has confirmed your request."
-        parameters: {sitterId: sitterId, startTime: startTime.toISOString(), endTime: endTime.toISOString()}
+      SendClientMessage.sitterConfirmedReservation accountKey, {sitter, startTime, endTime}
     )
 
   setSitterCount: (accountKey, {count}) ->
     updateSitterListP accountKey, (sitter_ids) ->
-      count = Math.max(0, Math.min(7, count))
+      count = Math.max(0, Math.min(MaxSitterCount, count))
       return if sitter_ids.length == count
       return _.uniq(sitter_ids.concat([1..7]))[0...count]
+
+  simulateServerError: ->
+    return unless process.env.DEBUG_SERVER
+    Q.delay(1).then ->
