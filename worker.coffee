@@ -104,14 +104,14 @@ SendClientMessage =
         messageType: 'sitterAcceptedConnection'
         messageTitle: 'Sitter Confirmed'
         messageText: "#{sitter.firstName} has accepted your request. We’ve added her to your Seven Sitters."
-        parameters: {sitterId}
+        parameters: {sitterId:sitter.id}
 
   sitterConfirmedReservation: (accountKey, {sitter, startTime, endTime}) ->
       sendMessageTo accountKey,
         messageType: 'sitterConfirmedReservation'
         messageTitle: 'Sitter Confirmed'
         messageText: "#{sitter.firstName} has confirmed your request."
-        parameters: {sitterId, startTime:startTime.toISOString(), endTime:endTime.toISOString()}
+        parameters: {sitterId:sitter.id, startTime:startTime.toISOString(), endTime:endTime.toISOString()}
 
 
 #
