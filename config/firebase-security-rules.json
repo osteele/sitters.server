@@ -2,7 +2,11 @@
   "rules": {
     "development": {
       "account": {
-        ".read": true
+        "$provider": {
+          "$id": {
+            ".read": "auth.provider == $provider && auth.id == $id"
+          }
+        }
       },
       "family": {
         ".read": true
@@ -30,7 +34,11 @@
     },
     "production": {
       "account": {
-        ".read": true
+        "$provider": {
+          "$id": {
+            ".read": "auth.provider == $provider && auth.id == $id"
+          }
+        }
       },
       "family": {
         ".read": true
