@@ -65,7 +65,7 @@ sendMessageTo = (accountKey, message) ->
   # logger.info "firebaseMessageId = #{firebaseMessageId}"
   accountKeyDeviceTokensP(accountKey).then (tokens) ->
     for token in tokens
-      APNS.pushMessageTo token, alert: message.messageText, payload: payload
+      APNS.pushMessageTo token, alert:message.messageText, payload:payload
 
 APNS.connection.on 'transmissionError', (errCode, notification, device) ->
   return unless errCode == 8 # invalid token
@@ -153,8 +153,8 @@ RequestHandlers =
   addSitter: (accountKey, {sitterId, delay}) ->
     delay ?= DefaultSitterConfirmationDelay
     sitter = null
-    Q.delay(delay * 1000
-    ).then(->
+    logger.info "Waiting #{delay}s" if delay > 0
+    Q.delay(delay * 1000).then(->
       Sitter.find(sitterId)
     ).then((sitter_) ->
       sitter = sitter_
@@ -242,6 +242,7 @@ RequestHandlers =
     delay ?= DefaultSitterConfirmationDelay
     startTime = new Date(startTime)
     endTime = new Date(endTime)
+    logger.info "Waiting #{delay}s" if delay > 0
     Q.delay(delay * 1000).then(->
       Sitter.find(sitterId)
     ).then((sitter) ->
