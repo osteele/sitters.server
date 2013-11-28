@@ -37,10 +37,17 @@ logger = Winston.loggers.add 'workers', console:loggerConsoleOptions
 if process.env.ROLLBAR_ACCESS_TOKEN
   rollbar = require 'rollbar'
   rollbar.init process.env.ROLLBAR_ACCESS_TOKEN
-  # rollbar.handleUncaughtExceptions()
 else
   rollbar =
     reportMessage: ->
+
+process.on 'uncaughtException', (err) ->
+  console.error err.stack
+  logger.error 'Fatal uncaught exception', err.message, ->
+    rollbar.handleError err, ->
+      rollbar.shutdown ->
+        process.exit 1
+
 
 #
 # APNS
@@ -118,7 +125,7 @@ SendClientMessage =
 # Request Handling
 #
 
-DefaultSitterConfirmationDelay = 20
+DefaultSitterConfirmationDelay = process.env.DEFAULT_SITTER_CONFIRMATION_DELAY || 20
 MaxSitterCount = 7
 
 logger.info "Polling #{RequestFB}"
@@ -154,7 +161,7 @@ RequestHandlers =
       Sitter.find(sitterId)
     ).then((sitter_) ->
       sitter = sitter_
-      logger.error "Unknown sitter ##{sitterId}"
+      logger.error "Unknown sitter ##{sitterId}" unless sitter
       return unless sitter
       updateSitterListP accountKey, (sitter_ids) ->
         logger.info "Adding sitter", sitterId, "to", sitter_ids
@@ -257,4 +264,4 @@ RequestHandlers =
       logger.info "Ignoring simulated server error"
       return
     Q.delay(1).then ->
-      {}.undefinedMethod()
+      throw new Error("Simulated server error")

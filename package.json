@@ -33,7 +33,7 @@
     "pg": "~2.8.3",
     "apn": "~1.4.3",
     "stripe": "~2.2.2",
-    "rollbar": "~0.2.8"
+    "rollbar": "osteele/node_rollbar"
   },
   "devDependencies": {
     "grunt": "~0.4.2",
