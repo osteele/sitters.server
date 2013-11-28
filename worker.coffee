@@ -13,10 +13,7 @@ _(global).extend require('./lib/models')
 #
 
 Winston = require 'winston'
-loggerConsoleOptions = {colorize:true, label:'workers'}
-loggerConsoleOptions = {timestamp:true} if process.env.NODE_ENV == 'production'
-# loggerConsoleOptions.timestamp = -> moment().format('H:MM:ss')
-logger = Winston.loggers.add 'workers', console:loggerConsoleOptions
+logger = Winston.loggers.add 'workers', console:{colorize:true, label:'workers'}
 
 
 #
