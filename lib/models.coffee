@@ -23,6 +23,7 @@ sequelize = new Sequelize process.env.DATABASE_URL,
   dialect: 'postgres'
   define: {underscored:true}
   logging: (msg) -> logger.info msg
+  pool: { maxConnections: 5, maxIdleTime: 30 }
 
 
 #
