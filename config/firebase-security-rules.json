@@ -20,7 +20,7 @@
           }
         }
       },
-      "response": {
+      "message": {
         "$provider": {
           "$id": {
             ".read": "auth.provider == $provider && auth.id == $id",
@@ -52,7 +52,7 @@
           }
         }
       },
-      "response": {
+      "message": {
         "$provider": {
           "$id": {
             ".read": "auth.provider == $provider && auth.id == $id",
