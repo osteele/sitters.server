@@ -1,0 +1,36 @@
+#!/usr/bin/env coffee
+
+require('dotenv').load()
+_ = require 'underscore'
+Q = require 'q'
+
+argv = require('optimist').argv
+process.env.ENVIRONMENT = 'production' if argv.production
+
+Firebase = require '../lib/firebase'
+{MessageFB} = Firebase
+_(global).extend require('../lib/utils')
+
+UserAuthId = 'facebook-172347878787877'
+
+do ->
+  [provider, id] = UserAuthId.split('-', 2)
+  Firebase.authenticateAs {provider, id}
+
+userMessageFB = MessageFB.child(UserAuthId)
+userMessageFB.on 'value', (snapshot) ->
+  messages = snapshot.val()
+  promises = []
+  for key, message of messages
+    console.log message
+    promises.push Firebase.fbRemoveP userMessageFB.child(key) if argv.remove or argv.delete
+  unless messages
+    console.log "No messages"
+  Q.all(promises).done ->
+    process.exit()
+
+# userMessageFB.on 'child_added', (snapshot) ->
+#   key = snapshot.name()
+#   message = snapshot.val()
+#   console.log message
+#   MessageFB.child(key).remove()
