@@ -17,17 +17,6 @@ logger = Winston.loggers.add 'workers', console:{colorize:true, label:'workers'}
 
 
 #
-# Raven / Sentry
-#
-
-# raven = require('raven')
-# RavenClient = new raven.Client(process.env.SENTRY_DSN, stackFunction:Error.prepareStackTrace)
-# RavenClient.patchGlobal ->
-#   logger.error 'Exiting'
-#   process.exit 1
-# logger.info 'Raven connection to', process.env.SENTRY_DSN
-
-#
 # Rollbar
 #
 
@@ -60,6 +49,7 @@ APNS = require('./lib/push')
 sendMessageTo = (accountKey, message) ->
   logger.info "Send -> #{accountKey}:", message
   firebaseMessageId = MessageFB.child(accountKey).push message
+  DeprecatedMessageFB.child(accountKey.replace('-', '/')).push message
   payload = _.extend {}, message
   delete payload.messageText
   # logger.info "firebaseMessageId = #{firebaseMessageId}"
@@ -138,7 +128,8 @@ RequestFB.on 'child_added', (snapshot) ->
 processRequest = (request) ->
   # RavenClient.captureMessage requestType
   rollbar.reportMessage "Process #{requestType}", 'info'
-  {accountKey, requestType, parameters} = request
+  {userAuthId, requestType, parameters} = request
+  accountKey = userAuthId.replace('/', '-')
   parameters ||= {}
   logger.info "Processing request #{requestType} from #{accountKey} with #{JSON.stringify(parameters).replace(/"(\w+)":/g, '$1:')}"
   handler = RequestHandlers[requestType]
@@ -171,7 +162,7 @@ RequestHandlers =
     )
 
   registerDeviceToken: (accountKey, {token}) ->
-    [provider_name, provider_user_id] = accountKey.split('/', 2)
+    [provider_name, provider_user_id] = accountKey.split('-', 2)
     accountP = Account.find where: {provider_name, provider_user_id}
     deviceP = Device.find where: {token}
     Q.all([accountP, deviceP]).spread (account, device) ->
@@ -206,7 +197,7 @@ RequestHandlers =
             customerRow.updateAttributes attrs
 
   registerUser: (accountKey, {displayName, email}) ->
-    [provider_name, provider_user_id] = accountKey.split('/', 2)
+    [provider_name, provider_user_id] = accountKey.split('-', 2)
     accountP = Account.findOrCreate {provider_name, provider_user_id}
     userP = User.findOrCreate {email}, {displayName}
     Q.all([accountP, userP]).spread (account, user) ->

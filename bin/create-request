@@ -2,8 +2,6 @@
 
 require('dotenv').load()
 _ = require 'underscore'
-argv = require('optimist').argv
-fs = require 'fs'
 path = require 'path'
 util = require 'util'
 Q = require 'q'
@@ -12,7 +10,9 @@ _.mixin _.str.exports()
 
 stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 
+argv = require('optimist').argv
 process.env.ENVIRONMENT = 'production' if argv.production
+
 Firebase = require '../lib/firebase'
 _(global).extend require('../lib/utils')
 
@@ -23,7 +23,7 @@ Date.prototype.setToBeginningOfHour = (hour) ->
   @setMilliseconds 0
 
 Defaults = {
-  accountKey: 'facebook/511404287'
+  userAuthId: 'facebook-172347878787877'
   cardInfo: {cardType:'Visa', number:'4242424242424242', expirationMonth:12, expirationYear:2015, cvc:'123'}
   deviceToken: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
   sitterCount: 2
@@ -36,10 +36,8 @@ Defaults = {
 }
 
 do ->
-  [provider, id] = Defaults.accountKey.split('/', 2)
+  [provider, id] = Defaults.userAuthId.split('-', 2)
   Firebase.authenticateAs {provider, id}
-
-requestTypeName = argv._[0] # in train-case
 
 RequestTypeGenerators =
   addSitter: -> {delay:Defaults.sitterResponseDelay, sitterId:Defaults.sitterId}
@@ -77,16 +75,17 @@ mergeCommandLineParameters = (parameters) ->
       parameters[key] = optionValue
   return parameters
 
+requestTypeName = argv._[0] # in train-case
 requestType = requestTypeName && _(requestTypeName).camelize()
 if requestType of RequestTypeGenerators
   parameters = RequestTypeGenerators[requestType].call(mode:'run')
-  accountKey = Defaults.accountKey
-  if false
-    console.info request
-    process.exit()
+  userAuthId = Defaults.userAuthId
   Q.resolve(parameters).then((parameters) ->
     parameters = mergeCommandLineParameters(parameters)
-    request = {requestType, accountKey, parameters}
+    timestamp = new Date().toISOString()
+    deviceUuid = '68753A44-4D6F-1226-9C60-0050E4C00067'
+    request = {requestType, deviceUuid, parameters, timestamp, userAuthId}
+    console.info request if argv['show-request']
     Firebase.RequestFB.push request, -> process.exit()
   ).done()
 else

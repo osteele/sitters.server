@@ -31,6 +31,11 @@ module.exports = {
       deferred.resolve snapshot
     return deferred.promise
 
+  fbRemoveP: (fb) ->
+    deferred = Q.defer()
+    fb.remove -> deferred.resolve()
+    return deferred.promise
+
   fbSetP: (fb, value) ->
     deferred = Q.defer()
     fb.set value, -> deferred.resolve()
@@ -38,7 +43,8 @@ module.exports = {
 
   # Request and response queues
   RequestFB: EnvironmentFB.child('request')
-  MessageFB: EnvironmentFB.child('message')
+  DeprecatedMessageFB: EnvironmentFB.child('message')
+  MessageFB: EnvironmentFB.child('message/user/auth')
 
   # Entities
   AccountFB: EnvironmentFB.child('account')

@@ -98,7 +98,7 @@ LIMIT 1
 """
 
 User.findByAccountKey = (accountKey) ->
-  [provider_name, provider_user_id] = accountKey.split('/', 2)
+  [provider_name, provider_user_id] = accountKey.split('-', 2)
   sequelize.query(SelectUserByAccountKeySQL, User, {}, {provider_name, provider_user_id}).then (rows) ->
     Q rows[0]
 
@@ -131,12 +131,12 @@ WHERE provider_name=:provider_name
 """
 
 accountKeyDeviceTokensP = (accountKey) ->
-  [provider_name, provider_user_id] = accountKey.split('/', 2)
+  [provider_name, provider_user_id] = accountKey.split('-', 2)
   sequelize.query(SelectDeviceTokensForAccountKeySQL, null, {raw:true}, {provider_name, provider_user_id}).then (rows) ->
     Q (token for {token} in rows)
 
 accountKeyUserFamilyP = (accountKey) ->
-  [provider_name, provider_user_id] = accountKey.split('/', 2)
+  [provider_name, provider_user_id] = accountKey.split('-', 2)
   sequelize.query(SelectAccountUserFamilySQL, Family, {}, {provider_name, provider_user_id}).then (rows) ->
     Q rows[0]
 
