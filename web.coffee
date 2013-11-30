@@ -33,7 +33,7 @@ passport.use new GitHubStrategy {
     done null, {username, roles}
 
 requireAdmin = (req, res, next) ->
-  return res.redirect '/login.html' unless req.isAuthenticated()
+  return res.redirect '/login' unless req.isAuthenticated()
   return res.send 401 unless 'admin' in req.user.roles
   return next()
 
@@ -44,6 +44,8 @@ requireAdmin = (req, res, next) ->
 
 express = require("express")
 app = express()
+app.set 'views', __dirname + '/views'
+app.set 'view engine', 'jade'
 app.configure ->
   app.use express.logger()
   app.use express.cookieParser()
@@ -71,25 +73,24 @@ app.get '/auth/github',
   (req, res) -> # not called
 
 app.get '/auth/github/callback',
-  passport.authenticate('github', failureRedirect: '/login.html'),
-  (req, res) -> res.redirect('/')
+  passport.authenticate('github', failureRedirect: '/login'),
+  (req, res) -> res.redirect '/'
 
-# app.get '/login', (req, res) ->
-#   res.render('login', { user: req.user })
+app.get '/login', (req, res) ->
+  res.render 'login'
 
 app.get '/logout', (req, res) ->
   req.logout()
-  res.redirect('/')
+  res.redirect '/'
 
 # app.all '*',
-#   # passport.authenticate('github', failureRedirect: '/login.html'),
+#   # passport.authenticate('github', failureRedirect: '/login'),
 #   (req, res, next) ->
 #     console.log 'auth'
 #     return next()
 
 app.get '/', requireAdmin, (req, res) ->
-  # res.send 401
-  res.send 'hello'
+  res.render 'index'
 
 port = process.env.PORT || 5000
 app.listen port, ->
