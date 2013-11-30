@@ -15,28 +15,27 @@ logger = Winston.loggers.add 'web', console:{colorize:true, label:'web'}
 
 passport = require 'passport'
 GitHubStrategy = require('passport-github').Strategy
-# LocalStrategy = require('passport-local').Strategy
-# passport.use new LocalStrategy((username, password, done) ->
-#   logger.log 'check', username, password
-#   # done null, {user:username}
-#   done null, false, {message: 'no'}
-# )
+GithubAdminIds = (process.env.GITHUB_ADMIN_IDS || process.env.USER).split(/,/)
 
 passport.serializeUser (user, done) ->
-  console.log 'serialize', user
   done null, user
 
 passport.deserializeUser (obj, done) ->
-  console.log 'deserialize', obj
   done null, obj
 
 passport.use new GitHubStrategy {
     clientID: process.env.GITHUB_CLIENT_ID
     clientSecret: process.env.GITHUB_CLIENT_SECRET
-    callbackURL: 'http://localhost:5000/auth/github/callback'
+    callbackURL: process.env.GITHUB_CALLBACK_URL
   }, (accessToken, refreshToken, profile, done) ->
-    console.log 'GitHubStrategy'
-    done null, {username:profile.username}
+    username = profile.username
+    roles = if username in GithubAdminIds then ['admin'] else []
+    done null, {username, roles}
+
+requireAdmin = (req, res, next) ->
+  return res.redirect '/login.html' unless req.isAuthenticated()
+  return res.send 401 unless 'admin' in req.user.roles
+  return next()
 
 
 #
@@ -50,7 +49,7 @@ app.configure ->
   app.use express.cookieParser()
   app.use express.bodyParser()
   app.use express.methodOverride()
-  app.use express.session(secret:'pmjTWbmydExed3AP6fqw')
+  app.use express.session(secret: process.env.SESSION_SECRET || 'pmjTWbmydExed3AP6fqw')
   app.use passport.initialize()
   app.use passport.session()
   app.use app.router
@@ -73,9 +72,7 @@ app.get '/auth/github',
 
 app.get '/auth/github/callback',
   passport.authenticate('github', failureRedirect: '/login.html'),
-  (req, res) ->
-    console.log 'callback'
-    res.redirect('/')
+  (req, res) -> res.redirect('/')
 
 # app.get '/login', (req, res) ->
 #   res.render('login', { user: req.user })
@@ -84,19 +81,14 @@ app.get '/logout', (req, res) ->
   req.logout()
   res.redirect('/')
 
-ensureAuthenticated = (req, res, next) ->
-  return next() if req.isAuthenticated()
-  res.redirect '/login.html'
-
 # app.all '*',
 #   # passport.authenticate('github', failureRedirect: '/login.html'),
 #   (req, res, next) ->
 #     console.log 'auth'
 #     return next()
 
-app.get '/', ensureAuthenticated, (req, res) ->
+app.get '/', requireAdmin, (req, res) ->
   # res.send 401
-  console.log 'root'
   res.send 'hello'
 
 port = process.env.PORT || 5000
