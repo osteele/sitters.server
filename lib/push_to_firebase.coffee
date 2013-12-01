@@ -12,13 +12,13 @@ ModelClassesByName = {}.tap (dict) ->
   models.forEach (model) =>
     this[model.tableName] = model
 
-getAccountFB = (account) ->
-  AccountFB.child(account.firebaseKey)
+getUserFB = (account) ->
+  UserFB.child('auth').child(account.firebaseKey)
 
 UpdateFunctions =
   accounts: (account) ->
     account.getUser().then (user) ->
-      fb = getAccountFB(account).child('family_id')
+      fb = getUserFB(account).child('family_id')
       fbOnceP(fb).then (snapshot) ->
         unless snapshot.val() == user.family_id
           fbSetP fb, user.family_id
@@ -33,7 +33,7 @@ UpdateFunctions =
     ).then((accounts) ->
       Q.all accounts.map (account) ->
         logger.info "→ Account ##{account.id}"
-        fbSetP getAccountFB(account).child('cardInfo'), paymentCustomer.card_info
+        fbSetP getUserFB(account).child('cardInfo'), paymentCustomer.card_info
     )
 
   sitters: (sitter) ->

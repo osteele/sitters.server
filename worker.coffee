@@ -90,8 +90,8 @@ sendMessageTo = (accountKey, message) ->
   payload = _.extend {}, message,
     timestamp: new Date().toISOString()
     apiVersion: API_VERSION
-  firebaseMessageId = MessageFB.child(accountKey).push message
-  DeprecatedMessageFB.child(accountKey.replace('-', '/')).push message
+  firebaseMessageId = MessageFB.child(accountKey).push payload
+  DeprecatedMessageFB.child(accountKey.replace('-', '/')).push payload
 
   payload = _.extend {}, message
   delete payload.messageText

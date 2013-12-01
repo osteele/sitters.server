@@ -47,7 +47,7 @@ module.exports = {
   MessageFB: EnvironmentFB.child('message/user/auth')
 
   # Entities
-  AccountFB: EnvironmentFB.child('account')
   FamilyFB: EnvironmentFB.child('family')
   SitterFB: EnvironmentFB.child('sitter')
+  UserFB: EnvironmentFB.child('user')
 }
