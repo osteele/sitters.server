@@ -35,7 +35,7 @@ Account = sequelize.define 'accounts', {
   provider_user_id: {type: Sequelize.STRING, index: true}
 }, {
   getterMethods:
-    firebaseKey: -> [@.provider_name, @.provider_user_id].join('/')
+    firebaseKey: -> [@.provider_name, @.provider_user_id].join('-')
 }
 
 Device = sequelize.define 'devices',
