@@ -132,7 +132,12 @@ RequestFB.on 'child_added', (snapshot) ->
   RequestFB.child(key).remove()
 
 jobs.process 'request', (job, done) ->
-  processRequest job.data, done
+  processRequest(job.data)
+   .then(-> done())
+   .fail (err) ->
+      logger.error err
+      rollbar.handleError err
+      done err
 
 processRequest = (request, done) ->
   {userAuthId, requestType, parameters} = request
@@ -146,7 +151,7 @@ processRequest = (request, done) ->
     return
   promise = handler(accountKey, parameters)
   promise = promise.then(updateFirebaseFromDatabaseP)
-  promise.done -> done()
+  return promise
 
 RequestHandlers =
   addSitter: (accountKey, {sitterId, delay}) ->
