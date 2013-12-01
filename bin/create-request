@@ -23,16 +23,18 @@ Date.prototype.setToBeginningOfHour = (hour) ->
   @setMilliseconds 0
 
 Defaults = {
-  userAuthId: 'facebook-172347878787877'
-  cardInfo: {cardType:'Visa', number:'4242424242424242', expirationMonth:12, expirationYear:2015, cvc:'123'}
-  deviceToken: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
-  sitterCount: 2
-  sitterId: 2
-  sitterResponseDelay: 0
-  sitterStartTime: new Date().tap -> @setToBeginningOfHour(18)
-  sitterEndTime: new Date().tap -> @setToBeginningOfHour(22)
-  userName: 'Mom'
-  userEmail: 'mom@host.com'
+  apiVersion          : 1
+  card                : {cardType:'Visa', cvc:'123', exp_month:12, exp_year:2015, number:'4242424242424242'}
+  deviceApnsToken     : '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
+  deviceUuid          : '68753A44-4D6F-1226-9C60-0050E4C00067'
+  sitterCount         : 2
+  sitterId            : 2
+  sitterResponseDelay : 0
+  sitterStartTime     : new Date().tap -> @setToBeginningOfHour(18)
+  sitterEndTime       : new Date().tap -> @setToBeginningOfHour(22)
+  userAuthId          : 'facebook-172347878787877'
+  userName            : 'Mom'
+  userEmail           : 'mom@host.com'
 }
 
 do ->
@@ -43,14 +45,16 @@ RequestTypeGenerators =
   addSitter: -> {delay:Defaults.sitterResponseDelay, sitterId:Defaults.sitterId}
 
   registerDeviceToken: ->
-    {token: Defaults.deviceToken}
+    {token:Defaults.deviceApnsToken}
 
   registerPaymentToken: ->
-    cardInfo = Defaults.cardInfo
-    return cardInfo if this.mode == 'help'
-    stripeCardInfo = {number:cardInfo.number, exp_month:cardInfo.expirationMonth, exp_year:cardInfo.expirationYear, cvc:cardInfo.cvc}
-    stripe.tokens.create(card:stripeCardInfo).then (response) ->
-      cardInfo = _.extend {}, cardInfo, {last4:cardInfo.number.match(/(.{4})$/)[1]}
+    card = Defaults.card
+    return card if this.mode == 'help'
+    stripe.tokens.create(card:card).then (response) ->
+      card = response.card
+      cardInfo = {type:card.type, last4:card.last4, expirationMonth:card.exp_month, expirationYear:card.exp_year}
+      # cardInfo = _.extend {}, cardInfo, {last4:cardInfo.number.match(/(.{4})$/)[1]}
+      # delete cardInfo.number
       Q {token:response.id, cardInfo}
 
   registerUser: -> {displayName:Defaults.userName, email:Defaults.userEmail}
@@ -79,12 +83,15 @@ requestTypeName = argv._[0] # in train-case
 requestType = requestTypeName && _(requestTypeName).camelize()
 if requestType of RequestTypeGenerators
   parameters = RequestTypeGenerators[requestType].call(mode:'run')
-  userAuthId = Defaults.userAuthId
   Q.resolve(parameters).then((parameters) ->
-    parameters = mergeCommandLineParameters(parameters)
-    timestamp = new Date().toISOString()
-    deviceUuid = '68753A44-4D6F-1226-9C60-0050E4C00067'
-    request = {requestType, deviceUuid, parameters, timestamp, userAuthId}
+    request = {
+      requestType : requestType
+      apiVersion  : Defaults.apiVersion
+      deviceUuid  : Defaults.deviceUuid
+      parameters  : mergeCommandLineParameters(parameters)
+      timestamp   : new Date().toISOString()
+      userAuthId  : Defaults.userAuthId
+    }
     console.info request if argv['show-request']
     Firebase.RequestFB.push request, -> process.exit()
   ).done()

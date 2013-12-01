@@ -9,6 +9,7 @@ jobs = kue.createQueue()
 stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 _(global).extend require('./lib/models')
 
+API_VERSION = 1
 
 #
 # Logging
@@ -42,22 +43,6 @@ process.on 'uncaughtException', (err) ->
 #
 
 APNS = require('./lib/push')
-
-# `message`:
-#   messageType: String -- client keys behavior off of this
-#   messageTitle: String -- UIAlert title
-#   messageText: String -- UIAlert text; also, push notification text
-#   parameters: Hash -- client interprets message against this
-sendMessageTo = (accountKey, message) ->
-  logger.info "Send -> #{accountKey}:", message
-  firebaseMessageId = MessageFB.child(accountKey).push message
-  DeprecatedMessageFB.child(accountKey.replace('-', '/')).push message
-  payload = _.extend {}, message
-  delete payload.messageText
-  # logger.info "firebaseMessageId = #{firebaseMessageId}"
-  accountKeyDeviceTokensP(accountKey).then (tokens) ->
-    for token in tokens
-      APNS.pushMessageTo token, alert:message.messageText, payload:payload
 
 APNS.connection.on 'transmissionError', (errCode, notification, device) ->
   return unless errCode == 8 # invalid token
@@ -93,6 +78,26 @@ updateFirebaseFromDatabaseP = do ->
 #
 # Client Messages
 #
+
+# `message`:
+#   messageType: String -- client keys behavior off of this
+#   messageTitle: String -- UIAlert title
+#   messageText: String -- UIAlert text; also, push notification text
+#   parameters: Hash -- client interprets message against this
+sendMessageTo = (accountKey, message) ->
+  logger.info "Send -> #{accountKey}:", message
+
+  payload = _.extend {}, message,
+    timestamp: new Date().toISOString()
+    apiVersion: API_VERSION
+  firebaseMessageId = MessageFB.child(accountKey).push message
+  DeprecatedMessageFB.child(accountKey.replace('-', '/')).push message
+
+  payload = _.extend {}, message
+  delete payload.messageText
+  accountKeyDeviceTokensP(accountKey).then (tokens) ->
+    for token in tokens
+      APNS.pushMessageTo token, alert:message.messageText, payload:payload
 
 SendClientMessage =
   sitterAcceptedConnection: (accountKey, {sitter}) ->
@@ -141,7 +146,7 @@ processRequest = (request, done) ->
     return
   promise = handler(accountKey, parameters)
   promise = promise.then(updateFirebaseFromDatabaseP)
-  promise.done done
+  promise.done -> done()
 
 RequestHandlers =
   addSitter: (accountKey, {sitterId, delay}) ->
