@@ -31,10 +31,8 @@ UpdateFunctions =
       logger.info "→ User ##{user?.id}"
       user.getAccounts()
     ).then((accounts) ->
-      # logger.info "User.accounts.length=#{accounts.length}"
       Q.all accounts.map (account) ->
         logger.info "→ Account ##{account.id}"
-        console.log "puts #{getAccountFB(account).child('cardInfo')} #{paymentCustomer.card_info}"
         fbSetP getAccountFB(account).child('cardInfo'), paymentCustomer.card_info
     )
 
