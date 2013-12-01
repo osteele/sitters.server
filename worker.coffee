@@ -4,6 +4,8 @@ Q = require 'q'
 Q.longStackSupport = true unless process.env.NODE_ENV == 'production' and not process.env.DEBUG_SERVER
 util = require 'util'
 moment = require 'moment'
+kue = require('kue')
+jobs = kue.createQueue()
 stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 _(global).extend require('./lib/models')
 
@@ -120,15 +122,16 @@ logger.info "Polling #{RequestFB}"
 RequestFB.on 'child_added', (snapshot) ->
   key = snapshot.name()
   request = snapshot.val()
-  try
-    processRequest request
-  finally
-    RequestFB.child(key).remove()
+  request.title = "#{request.requestType} from #{request.userAuthId}"
+  jobs.create('request', request).save()
+  RequestFB.child(key).remove()
 
-processRequest = (request) ->
-  # RavenClient.captureMessage requestType
-  rollbar.reportMessage "Process #{requestType}", 'info'
+jobs.process 'request', (job, done) ->
+  processRequest job.data, done
+
+processRequest = (request, done) ->
   {userAuthId, requestType, parameters} = request
+  rollbar.reportMessage "Process #{requestType}", 'info'
   accountKey = userAuthId.replace('/', '-')
   parameters ||= {}
   logger.info "Processing request #{requestType} from #{accountKey} with #{JSON.stringify(parameters).replace(/"(\w+)":/g, '$1:')}"
@@ -138,7 +141,7 @@ processRequest = (request) ->
     return
   promise = handler(accountKey, parameters)
   promise = promise.then(updateFirebaseFromDatabaseP)
-  promise.done()
+  promise.done done
 
 RequestHandlers =
   addSitter: (accountKey, {sitterId, delay}) ->
@@ -237,7 +240,7 @@ RequestHandlers =
     Q.delay(delay * 1000).then(->
       Sitter.find(sitterId)
     ).then((sitter) ->
-      logger.error "Unknown sitter ##{sitterId}"
+      logger.error "Unknown sitter ##{sitterId}" unless sitter
       return unless sitter
       SendClientMessage.sitterConfirmedReservation accountKey, {sitter, startTime, endTime}
     )

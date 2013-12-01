@@ -26,6 +26,7 @@
     "firebase-token-generator": "~0.1.4",
     "q": "~0.9.7",
     "underscore": "~1.5.2",
+    "underscore.string": "~2.3.3",
     "optimist": "~0.6.0",
     "winston": "~0.7.2",
     "moment": "~2.4.0",
@@ -38,7 +39,8 @@
     "passport": "~0.1.17",
     "passport-github": "~0.1.5",
     "jade": "~0.35.0",
-    "marked": "~0.2.10"
+    "marked": "~0.2.10",
+    "kue": "~0.6.2"
   },
   "devDependencies": {
     "grunt": "~0.4.2",
@@ -46,7 +48,6 @@
     "grunt-contrib-watch": "~0.5.3",
     "load-grunt-tasks": "~0.2.0",
     "debug": "~0.7.4",
-    "underscore.string": "~2.3.3",
     "kexec": "~0.1.1"
   },
   "main": "server.coffee"

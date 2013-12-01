@@ -1,4 +1,5 @@
 require('dotenv').load()
+kue = require 'kue'
 require './worker'
 
 #
@@ -47,7 +48,7 @@ app = express()
 app.set 'views', __dirname + '/views'
 app.set 'view engine', 'jade'
 app.configure ->
-  app.use express.logger()
+  app.use express.logger() if process.env.NODE_ENV == 'production'
   app.use express.cookieParser()
   app.use express.bodyParser()
   app.use express.methodOverride()
@@ -56,6 +57,8 @@ app.configure ->
   app.use passport.session()
   app.use app.router
   app.use express.static(__dirname + '/public')
+  app.use requireAdmin
+  app.use '/jobs', kue.app
 
 app.get '/health', (request, response) ->
   response.send 'OK'
@@ -83,14 +86,18 @@ app.get '/logout', (req, res) ->
   req.logout()
   res.redirect '/'
 
-# app.all '*',
-#   # passport.authenticate('github', failureRedirect: '/login'),
-#   (req, res, next) ->
-#     console.log 'auth'
-#     return next()
+
+#
+# Admin Pages
+#
 
 app.get '/', requireAdmin, (req, res) ->
   res.render 'index'
+
+
+#
+# Listen
+#
 
 port = process.env.PORT || 5000
 app.listen port, ->
