@@ -1,5 +1,5 @@
 require('dotenv').load()
-kue = require 'kue'
+kue = require './lib/kue'
 require './worker'
 
 #
@@ -8,7 +8,6 @@ require './worker'
 
 Winston = require 'winston'
 logger = Winston.loggers.add 'web', console:{colorize:true, label:'web'}
-
 
 #
 # Auth

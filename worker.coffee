@@ -4,7 +4,7 @@ Q = require 'q'
 Q.longStackSupport = true unless process.env.NODE_ENV == 'production' and not process.env.DEBUG_SERVER
 util = require 'util'
 moment = require 'moment'
-kue = require('kue')
+kue = require './lib/kue'
 jobs = kue.createQueue()
 stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 _(global).extend require('./lib/models')
