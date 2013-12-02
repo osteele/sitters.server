@@ -44,14 +44,26 @@ requireAdmin = (req, res, next) ->
 
 express = require("express")
 app = express()
+
+RedisStore = require('connect-redis')(express)
+sessionStore = do ->
+  url = require("url").parse(process.env.REDISTOGO_URL || 'redis://127.0.0.1:6379/')
+  options =
+      host: url.host.replace(/:\d+/, '')
+      port: Number(url.port)
+      pass: (url.auth || '').split(":")[1]
+  new RedisStore(options)
+sessionSecret = process.env.SESSION_SECRET || 'pmjTWbmydExed3AP6fqw'
+
 app.set 'views', __dirname + '/views'
 app.set 'view engine', 'jade'
+
 app.configure ->
   app.use express.logger() if process.env.NODE_ENV == 'production'
   app.use express.cookieParser()
   app.use express.bodyParser()
   app.use express.methodOverride()
-  app.use express.session(secret: process.env.SESSION_SECRET || 'pmjTWbmydExed3AP6fqw')
+  app.use express.session(store:sessionStore, secret:sessionSecret)
   app.use passport.initialize()
   app.use passport.session()
   app.use app.router
