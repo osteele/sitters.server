@@ -1,4 +1,13 @@
-a(href="/logout") Logout
+!!! 5
+html
+  header
+    title Seven Sitters Admin
+    link(href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.0.0/css/bootstrap.min.css", rel="stylesheet")
 
-h1 Dashboards
-include links.md
+  body
+    .navbar.navbar-default
+      .navbar-header
+        a.btn.btn-primary(href="/logout") Logout
+
+    .content
+      include links.md
