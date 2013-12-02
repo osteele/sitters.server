@@ -100,11 +100,19 @@ app.get '/logout', (req, res) ->
 
 
 #
+# User Pages
+#
+
+app.get '/', (req, res) ->
+  res.render 'index'
+
+
+#
 # Admin Pages
 #
 
-app.get '/', requireAdmin, (req, res) ->
-  res.render 'index'
+app.get '/admin', requireAdmin, (req, res) ->
+  res.render 'admin'
 
 
 #
