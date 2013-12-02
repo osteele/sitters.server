@@ -10,8 +10,10 @@ authenticateAs = (data={}, options={}) ->
   token = TokenGenerator.createToken(data, options)
   FirebaseRoot.auth token, (error, result) ->
     console.error 'error', error if error
+    # result.expires * 1000
   , (error) ->
-    authenticateAs(data, options)
+    console.info "Renewing expired firebase authentication"
+    authenticateAs data, options
 
 module.exports = {
   FirebaseRoot
@@ -43,7 +45,6 @@ module.exports = {
 
   # Request and response queues
   RequestFB: EnvironmentFB.child('request')
-  DeprecatedMessageFB: EnvironmentFB.child('message')
   MessageFB: EnvironmentFB.child('message/user/auth')
 
   # Entities

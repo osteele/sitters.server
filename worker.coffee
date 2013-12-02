@@ -80,18 +80,17 @@ updateFirebaseFromDatabaseP = do ->
 #
 
 # `message`:
-#   messageType: String -- client keys behavior off of this
-#   messageTitle: String -- UIAlert title
-#   messageText: String -- UIAlert text; also, push notification text
-#   parameters: Hash -- client interprets message against this
+#   messageType  : String -- client keys behavior off of this
+#   messageTitle : String -- UIAlert title
+#   messageText  : String -- UIAlert text; also, push notification text
+#   parameters   : Hash -- client interprets message against this
 sendMessageTo = (accountKey, message) ->
   logger.info "Send -> #{accountKey}:", message
 
   payload = _.extend {}, message,
     timestamp: new Date().toISOString()
     apiVersion: API_VERSION
-  firebaseMessageId = MessageFB.child(accountKey).push payload
-  DeprecatedMessageFB.child(accountKey.replace('-', '/')).push payload
+  messageId = MessageFB.child(accountKey).push(payload).name()
 
   payload = _.extend {}, message
   delete payload.messageText
