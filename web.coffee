@@ -89,7 +89,7 @@ app.get '/auth/github',
 
 app.get '/auth/github/callback',
   passport.authenticate('github', failureRedirect: '/login'),
-  (req, res) -> res.redirect '/'
+  (req, res) -> res.redirect '/admin'
 
 app.get '/login', (req, res) ->
   res.render 'login'
