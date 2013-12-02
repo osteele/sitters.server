@@ -61,7 +61,8 @@ app.set 'view engine', 'jade'
 app.configure ->
   app.use express.logger() if process.env.NODE_ENV == 'production'
   app.use express.cookieParser()
-  app.use express.bodyParser()
+  app.use express.urlencoded()
+  app.use express.json()
   app.use express.methodOverride()
   app.use express.session(store:sessionStore, secret:sessionSecret)
   app.use passport.initialize()
