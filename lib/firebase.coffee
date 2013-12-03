@@ -10,7 +10,7 @@ authenticateAs = (data={}, options={}) ->
   token = TokenGenerator.createToken(data, options)
   FirebaseRoot.auth token, (error, result) ->
     console.error 'error', error if error
-    # result.expires * 1000
+    # will expire at result.expires * 1000
   , (error) ->
     console.info "Renewing expired firebase authentication"
     authenticateAs data, options
@@ -23,24 +23,31 @@ module.exports = {
 
   fbOnP: (fb, eventType='value') ->
     deferred = Q.defer()
-    fb.on eventType, (snapshot) ->
-      deferred.resolve snapshot
+    fb.on eventType,
+      (snapshot) -> deferred.resolve snapshot
+      (err) -> deferred.reject err
     return deferred.promise
 
   fbOnceP: (fb, eventType='value') ->
     deferred = Q.defer()
-    fb.once eventType, (snapshot) ->
-      deferred.resolve snapshot
+    fb.once eventType,
+      (snapshot) -> deferred.resolve snapshot
+      (err) -> deferred.reject err
+    return deferred.promise
+
+  fbPushP: (fb, value) ->
+    deferred = Q.defer()
+    fb.push value, (err) -> if err then deferred.reject err else deferred.resolve()
     return deferred.promise
 
   fbRemoveP: (fb) ->
     deferred = Q.defer()
-    fb.remove -> deferred.resolve()
+    fb.remove (err) -> if err then deferred.reject err else deferred.resolve()
     return deferred.promise
 
   fbSetP: (fb, value) ->
     deferred = Q.defer()
-    fb.set value, -> deferred.resolve()
+    fb.set value, (err) -> if err then deferred.reject err else deferred.resolve()
     return deferred.promise
 
   # Request and response queues
