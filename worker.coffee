@@ -126,12 +126,12 @@ logger.info "Polling #{RequestFB}"
 RequestFB.on 'child_added', (snapshot) ->
   key = snapshot.name()
   request = snapshot.val()
-  request.title = "#{request.requestType} from #{request.userAuthId}"
-  jobs.create('request', request).save()
+  title = "#{request.requestType} from #{request.userAuthId}"
+  jobs.create('request', {request, title}).save()
   RequestFB.child(key).remove()
 
 jobs.process 'request', (job, done) ->
-  processRequest(job.data)
+  processRequest(job.data.request)
    .then(-> done())
    .fail (err) ->
       logger.error err
@@ -148,12 +148,12 @@ processRequest = (request, done) ->
   unless handler
     logger.error "Unknown request type #{requestType}"
     return
-  promise = handler(accountKey, parameters)
+  promise = handler({accountKey}, parameters)
   promise = promise.then(updateFirebaseFromDatabaseP)
   return promise
 
 RequestHandlers =
-  addSitter: (accountKey, {sitterId, delay}) ->
+  addSitter: ({accountKey}, {sitterId, delay}) ->
     delay ?= DefaultSitterConfirmationDelay
     sitter = null
     logger.info "Waiting #{delay}s" if delay > 0
@@ -173,7 +173,7 @@ RequestHandlers =
       SendClientMessage.sitterAcceptedConnection accountKey, {sitter}
     )
 
-  registerDeviceToken: (accountKey, {token}) ->
+  registerDeviceToken: ({accountKey}, {token}) ->
     [provider_name, provider_user_id] = accountKey.split('-', 2)
     accountP = Account.find where: {provider_name, provider_user_id}
     deviceP = Device.find where: {token}
@@ -187,7 +187,7 @@ RequestHandlers =
         logger.info "Register device"
         Device.create {token, user_id: account.user_id}
 
-  registerPaymentToken: (accountKey, {token, cardInfo}) ->
+  registerPaymentToken: ({accountKey}, {token, cardInfo}) ->
     user = null
     User.findByAccountKey(accountKey).then((user_) ->
       user = user_
@@ -208,7 +208,7 @@ RequestHandlers =
           PaymentCustomer.findOrCreate({user_id:user.id}, attrs).then (customerRow) ->
             customerRow.updateAttributes attrs
 
-  registerUser: (accountKey, {displayName, email}) ->
+  registerUser: ({accountKey}, {displayName, email}) ->
     [provider_name, provider_user_id] = accountKey.split('-', 2)
     accountP = Account.findOrCreate {provider_name, provider_user_id}
     userP = User.findOrCreate {email}, {displayName}
@@ -225,7 +225,7 @@ RequestHandlers =
             user.updateAttributes family_id:family.id
       ]
 
-  removePaymentCard: (accountKey, {}) ->
+  removePaymentCard: ({accountKey}, {}) ->
     user = null
     User.findByAccountKey(accountKey).then((user_) ->
       user = user_
@@ -241,7 +241,7 @@ RequestHandlers =
         else
           removeCardInfo()
 
-  reserveSitter: (accountKey, {sitterId, startTime, endTime, delay}) ->
+  reserveSitter: ({accountKey}, {sitterId, startTime, endTime, delay}) ->
     delay ?= DefaultSitterConfirmationDelay
     startTime = new Date(startTime)
     endTime = new Date(endTime)
@@ -254,7 +254,7 @@ RequestHandlers =
       SendClientMessage.sitterConfirmedReservation accountKey, {sitter, startTime, endTime}
     )
 
-  setSitterCount: (accountKey, {count}) ->
+  setSitterCount: ({accountKey}, {count}) ->
     updateSitterListP accountKey, (sitter_ids) ->
       count = Math.max(0, Math.min(MaxSitterCount, count))
       return if sitter_ids.length == count
