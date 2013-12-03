@@ -3,7 +3,9 @@
 require('dotenv').load()
 _ = require 'underscore'
 path = require 'path'
+read = require 'read'
 util = require 'util'
+yaml = require 'js-yaml'
 Q = require 'q'
 _.str = require('underscore.string')
 _.mixin _.str.exports()
@@ -13,7 +15,7 @@ stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 argv = require('optimist').argv
 process.env.ENVIRONMENT = 'production' if argv.production
 
-Firebase = require '../lib/firebase'
+firebase = require '../lib/firebase'
 _(global).extend require('../lib/utils')
 
 Date.prototype.setToBeginningOfHour = (hour) ->
@@ -39,7 +41,7 @@ Defaults = {
 
 do ->
   [provider, id] = Defaults.userAuthId.split('-', 2)
-  Firebase.authenticateAs {provider, id}
+  firebase.authenticateAs {provider, id}
 
 RequestTypeGenerators =
   addSitter: -> {delay:Defaults.sitterResponseDelay, sitterId:Defaults.sitterId}
@@ -79,11 +81,9 @@ mergeCommandLineParameters = (parameters) ->
       parameters[key] = optionValue
   return parameters
 
-requestTypeName = argv._[0] # in train-case
-requestType = requestTypeName && _(requestTypeName).camelize()
-if requestType of RequestTypeGenerators
+sendRequest = (requestType) ->
   parameters = RequestTypeGenerators[requestType].call(mode:'run')
-  Q.resolve(parameters).then((parameters) ->
+  Q.resolve(parameters).then (parameters) ->
     request = {
       requestType : requestType
       apiVersion  : Defaults.apiVersion
@@ -92,14 +92,47 @@ if requestType of RequestTypeGenerators
       timestamp   : new Date().toISOString()
       userAuthId  : Defaults.userAuthId
     }
-    console.info request if argv['show-request']
-    Firebase.RequestFB.push request, -> process.exit()
-  ).done()
-else
+    if argv['verbose']
+      console.info 'Message:'
+      console.info yaml.dump(request).replace(/(^|\n)/g, '$1  ')
+    deferred = Q.defer()
+    requestFb = firebase.RequestFB.push request, (err) ->
+      if err then deferred.reject err else deferred.resolve()
+    console.info '->', requestFb.toString() if argv['verbose']
+    return deferred.promise
+
+help = ->
   programName =  './' + path.relative(process.cwd(), argv.$0.replace(/^coffee\s+/, ''))
   console.info "Usage: #{programName} COMMAND [OPTIONS]"
   console.info "Commands:"
   for key, optionsFn of RequestTypeGenerators
     options = optionsFn.call(mode:'help')
     console.info ' ', _(key).dasherize(), ("--#{_(option).dasherize()}=#{util.inspect(v)}" for option, v of options).join(' ')
+
+cli = ->
+  requestTypes = _.keys(RequestTypeGenerators)
+  requestTypes.forEach (name, i) -> console.log "[#{i}] #{name}"
+  console.log '[Q] quit'
+  read prompt:'? ', (err, input) ->
+    process.exit() if input.match(/^q$/i)
+    requestType = requestTypes[input]
+    if requestType
+      console.info "Sending #{requestType}"
+      sendRequest(requestType).done -> console.info ''; cli()
+    else
+      console.info "Unknown command: #{input}"
+      cli()
+
+requestType = argv._[0]
+if requestType and _(requestType).camelize() of RequestTypeGenerators
+  requestType = _(requestType).camelize()
+  sendRequest(requestType).done -> process.exit()
+else if requestType
+  console.error "Unknown request type: #{requestType}"
+  help()
+  process.exit 1
+else if argv.i or argv.console
+  cli()
+else
+  help()
   process.exit()

@@ -45,20 +45,23 @@ UpdateFunctions =
     user.getAccounts().then (accounts) ->
       Q.all accounts.map UpdateFunctions.accounts
 
+SelectChangesSQL = "SELECT DISTINCT table_name, entity_id FROM change_log LIMIT :limit"
+DeleteChangesSQL = "DELETE FROM change_log WHERE table_name=:table_name AND entity_id=:entity_id"
+
 exports.updateSomeP = (limit=10) ->
-  sequelize.query("SELECT DISTINCT table_name, entity_id FROM change_log LIMIT :limit", null, {raw:true}, {limit}).then (rows) ->
+  sequelize.query(SelectChangesSQL, null, {raw:true}, {limit}).then (rows) ->
     Q.all(rows.map ({operation, table_name, entity_id}) ->
       tableClass = ModelClassesByName[table_name]
       unless tableClass
         logger.warn "No update method for table #{table_name}"
         return
       tableClass.find(entity_id).then((entity) ->
-        logger.info 'Deleted', table_name, '#' + entity_id unless entity
+        logger.info "Deleted #{table_name} ##{entity_id}" unless entity
         return unless entity # TODO delete the fb record
-        logger.info 'Update', table_name, '#' + entity_id
+        logger.info "Update #{table_name} ##{entity_id}"
         UpdateFunctions[table_name]?(entity)
       ).then ->
-        sequelize.query("DELETE FROM change_log WHERE table_name=:table_name AND entity_id=:entity_id", null, {raw:true}, {table_name, entity_id})
+        sequelize.query(DeleteChangesSQL, null, {raw:true}, {table_name, entity_id})
     ).get('length')
 
 exports.updateAllP = (trancheSize=10, total=0) ->

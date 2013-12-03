@@ -21,7 +21,7 @@ do ->
 userMessageFB = MessageFB.child(UserAuthId)
 
 printMessage = (message) ->
-  console.log yaml.dump message
+  console.log yaml.dump(message)
 
 if argv.follow
   userMessageFB.on 'child_added', (snapshot) ->
