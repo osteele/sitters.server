@@ -96,7 +96,7 @@ app.get '/login', (req, res) ->
 
 app.get '/logout', (req, res) ->
   req.logout()
-  res.redirect '/'
+  res.redirect '/admin'
 
 
 #

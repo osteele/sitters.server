@@ -2,12 +2,19 @@
 html
   header
     title Seven Sitters Admin
+    meta(charset="utf-8")
     link(href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.0.0/css/bootstrap.min.css", rel="stylesheet")
 
   body
-    .navbar.navbar-default
-      .navbar-header
-        a.btn.btn-primary(href="/logout") Logout
+    .navbar.navbar-default.navbar-static-top
+      .container
+        .navbar-header
+          .navbar-brand Seven Sitters Admin
+        .navbar-collapse.collapse
+          .nav.navbar-nav.navbar-right
+            a.btn.navbar-btn.btn-default(href="/logout") Logout
 
-    .content
-      include links.md
+    .container
+      .row
+        .col-lg-12
+          include links.md
