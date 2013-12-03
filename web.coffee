@@ -1,16 +1,20 @@
+# Web server. Also includes workers, to run in same process.
+
 require('dotenv').load()
 kue = require './lib/kue'
 require './worker'
 
 #
-# Logging
+# Configure Logging
+# --
 #
 
 Winston = require 'winston'
 logger = Winston.loggers.add 'web', console:{colorize:true, label:'web'}
 
 #
-# Auth
+# Configure Auth
+# --
 #
 
 passport = require 'passport'
@@ -39,7 +43,8 @@ requireAdmin = (req, res, next) ->
 
 
 #
-# Application
+# Server Application
+# --
 #
 
 express = require("express")
@@ -81,6 +86,7 @@ app.get '/ping', (request, response) ->
 
 #
 # Login
+# --
 #
 
 app.get '/auth/github',
@@ -101,6 +107,7 @@ app.get '/logout', (req, res) ->
 
 #
 # User Pages
+# --
 #
 
 app.get '/', (req, res) ->
@@ -109,6 +116,7 @@ app.get '/', (req, res) ->
 
 #
 # Admin Pages
+# --
 #
 
 app.get '/admin', requireAdmin, (req, res) ->
@@ -116,7 +124,8 @@ app.get '/admin', requireAdmin, (req, res) ->
 
 
 #
-# Listen
+# Start Server
+# --
 #
 
 port = process.env.PORT || 5000

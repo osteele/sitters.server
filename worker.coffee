@@ -1,3 +1,9 @@
+
+#
+# Imports
+# --
+#
+
 require('dotenv').load()
 _ = require 'underscore'
 Q = require 'q'
@@ -12,7 +18,8 @@ _(global).extend require('./lib/models')
 API_VERSION = 1
 
 #
-# Logging
+# Configure Logging
+# --
 #
 
 Winston = require 'winston'
@@ -20,7 +27,8 @@ logger = Winston.loggers.add 'workers', console:{colorize:true, label:'workers'}
 
 
 #
-# Rollbar
+# Rollbar integration
+# --
 #
 
 if process.env.ROLLBAR_ACCESS_TOKEN
@@ -40,6 +48,7 @@ process.on 'uncaughtException', (err) ->
 
 #
 # APNS
+# --
 #
 
 APNS = require('./lib/push')
@@ -63,6 +72,7 @@ APNS.feedback.on 'feedback', (devices) ->
 
 #
 # Firebase
+# --
 #
 
 Firebase = require('./lib/firebase')
@@ -77,6 +87,7 @@ updateFirebaseFromDatabaseP = do ->
 
 #
 # Client Messages
+# --
 #
 
 # `message`:
@@ -116,6 +127,7 @@ SendClientMessage =
 
 #
 # Request Handling
+# --
 #
 
 DefaultSitterConfirmationDelay = process.env.DEFAULT_SITTER_CONFIRMATION_DELAY || 20

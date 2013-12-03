@@ -1,3 +1,5 @@
+# Firebase shim. Defines app-specific message and entity paths, and adds Promise interface to Firebase API.
+
 Q = require 'q'
 Firebase = require('firebase')
 FirebaseTokenGenerator = require("firebase-token-generator")
@@ -6,6 +8,7 @@ TokenGenerator = new FirebaseTokenGenerator(process.env.FIREBASE_SECRET)
 FirebaseRoot = new Firebase('https://sevensitters.firebaseIO.com/')
 EnvironmentFB = FirebaseRoot.child(process.env.ENVIRONMENT || 'development')
 
+# Wrapper for `FirebaseRoot.auth`. Creates the token, and automatically renews it.
 authenticateAs = (data={}, options={}) ->
   token = TokenGenerator.createToken(data, options)
   FirebaseRoot.auth token, (error, result) ->
@@ -20,6 +23,9 @@ module.exports = {
   EnvironmentFB
 
   authenticateAs
+
+  # Promise adaptors for Firebase API
+  # --
 
   fbOnP: (fb, eventType='value') ->
     deferred = Q.defer()
@@ -51,10 +57,12 @@ module.exports = {
     return deferred.promise
 
   # Request and response queues
+  # --
   RequestFB: EnvironmentFB.child('request')
   MessageFB: EnvironmentFB.child('message/user/auth')
 
   # Entities
+  # --
   FamilyFB: EnvironmentFB.child('family')
   SitterFB: EnvironmentFB.child('sitter')
   UserFB: EnvironmentFB.child('user')

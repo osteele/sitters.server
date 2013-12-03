@@ -1,3 +1,5 @@
+# Interface to Apple Push Notification Service
+
 require('dotenv').load()
 apn = require 'apn'
 path = require 'path'

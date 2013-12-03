@@ -1,3 +1,5 @@
+# Read the database change log, and push changes to Firebase
+
 Q = require 'q'
 _ = require 'underscore'
 require('../lib/utils')

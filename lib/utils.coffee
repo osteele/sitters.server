@@ -1,3 +1,5 @@
+# Generic utilities
+
 Object.defineProperty Object.prototype, 'tap',
   value: (fn) ->
     fn.call this

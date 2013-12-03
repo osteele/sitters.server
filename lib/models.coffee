@@ -1,3 +1,5 @@
+# Define the database models.
+
 require('dotenv').load()
 _ = require 'underscore'
 Q = require 'q'
@@ -5,6 +7,7 @@ Q = require 'q'
 
 #
 # Logging
+# --
 #
 
 winston = require 'winston'
@@ -16,6 +19,7 @@ logger = winston.loggers.add 'sql', loggerOptions
 
 #
 # Database Connection
+# --
 #
 
 Sequelize = require('sequelize-postgres').sequelize
@@ -28,6 +32,7 @@ sequelize = new Sequelize process.env.DATABASE_URL,
 
 #
 # Models
+# --
 #
 
 Account = sequelize.define 'accounts', {
@@ -68,6 +73,7 @@ User = sequelize.define 'users',
 
 #
 # Associations
+# --
 #
 
 Account.belongsTo User
@@ -84,6 +90,7 @@ sequelize.sync()
 
 #
 # Custom Finders
+# --
 #
 
 SelectUserByAccountKeySQL = """
@@ -132,7 +139,8 @@ updateUserSitterListP = (user, fn) ->
 
 
 #
-# Export
+# Exports
+# --
 #
 
 module.exports = {
