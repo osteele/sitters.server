@@ -131,14 +131,15 @@ RequestFB.on 'child_added', (snapshot) ->
   RequestFB.child(key).remove()
 
 jobs.process 'request', (job, done) ->
-  processRequest(job.data.request)
-   .then(-> done())
-   .fail (err) ->
+  processRequest(job.data.request).then(
+    -> done()
+    (err) ->
       logger.error err
       rollbar.handleError err
       done err
+  ).done()
 
-processRequest = (request, done) ->
+processRequest = (request) ->
   {userAuthId, requestType, parameters} = request
   rollbar.reportMessage "Process #{requestType}", 'info'
   accountKey = userAuthId.replace('/', '-')
@@ -148,12 +149,13 @@ processRequest = (request, done) ->
   unless handler
     logger.error "Unknown request type #{requestType}"
     return
-  promise = handler({accountKey}, parameters)
-  promise = promise.then(updateFirebaseFromDatabaseP)
+  promise = User.findByAccountKey(accountKey)
+  promise = promise.then (user) -> handler {accountKey, user}, parameters
+  promise = promise.then updateFirebaseFromDatabaseP
   return promise
 
 RequestHandlers =
-  addSitter: ({accountKey}, {sitterId, delay}) ->
+  addSitter: ({accountKey, user}, {sitterId, delay}) ->
     delay ?= DefaultSitterConfirmationDelay
     sitter = null
     logger.info "Waiting #{delay}s" if delay > 0
@@ -163,7 +165,7 @@ RequestHandlers =
       sitter = sitter_
       logger.error "Unknown sitter ##{sitterId}" unless sitter
       return unless sitter
-      updateSitterListP accountKey, (sitter_ids) ->
+      updateUserSitterListP user, (sitter_ids) ->
         logger.info "Adding sitter", sitterId, "to", sitter_ids
         return if sitterId in sitter_ids
         return sitter_ids.concat([sitterId])
@@ -187,14 +189,8 @@ RequestHandlers =
         logger.info "Register device"
         Device.create {token, user_id: account.user_id}
 
-  registerPaymentToken: ({accountKey}, {token, cardInfo}) ->
-    user = null
-    User.findByAccountKey(accountKey).then((user_) ->
-      user = user_
-      logger.info "Found user ##{user.id}"
-      return unless user
-      PaymentCustomer.findOrCreate user_id:user.id
-    ).then (customerRow) ->
+  registerPaymentToken: ({user}, {token, cardInfo}) ->
+    PaymentCustomer.findOrCreate(user_id:user.id).then (customerRow) ->
       email = user.email
       metadata = {user_id:user.id}
       if customerRow?.stripe_customer_id
@@ -225,19 +221,15 @@ RequestHandlers =
             user.updateAttributes family_id:family.id
       ]
 
-  removePaymentCard: ({accountKey}, {}) ->
-    user = null
-    User.findByAccountKey(accountKey).then((user_) ->
-      user = user_
-      PaymentCustomer.find where: {user_id:user.id}
-    ).then (customerRow) ->
-      customerId = customerRow?.stripe_customer_id
-      return unless customerId
+  removePaymentCard: ({user}, {}) ->
+    PaymentCustomer.find(where: {user_id:user.id}).then (customerRow) ->
+      stripeCustomerId = customerRow?.stripe_customer_id
+      return unless stripeCustomerId
       removeCardInfo = -> customerRow.updateAttributes card_info:{}
-      stripe.customers.retrieve(customerId).then (customer) ->
+      stripe.customers.retrieve(stripeCustomerId).then (customer) ->
         cardId = customer.cards.data[0]?.id
         if cardId
-          stripe.customers.deleteCard(customerId, cardId).then removeCardInfo
+          stripe.customers.deleteCard(stripeCustomerId, cardId).then removeCardInfo
         else
           removeCardInfo()
 
@@ -254,11 +246,11 @@ RequestHandlers =
       SendClientMessage.sitterConfirmedReservation accountKey, {sitter, startTime, endTime}
     )
 
-  setSitterCount: ({accountKey}, {count}) ->
-    updateSitterListP accountKey, (sitter_ids) ->
+  setSitterCount: ({user}, {count}) ->
+    updateUserSitterListP user, (sitter_ids) ->
       count = Math.max(0, Math.min(MaxSitterCount, count))
       return if sitter_ids.length == count
-      return _.uniq(sitter_ids.concat([1..7]))[0...count]
+      return _.uniq(sitter_ids.concat([1..MaxSitterCount]))[0...count]
 
   simulateServerError: ->
     if process.env.NODE_ENV == 'production' and not process.env.DEBUG_SERVER

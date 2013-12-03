@@ -74,6 +74,7 @@ Account.belongsTo User
 Family.hasMany User
 PaymentCustomer.belongsTo User
 User.hasMany Account
+User.belongsTo Family
 User.hasOne PaymentCustomer
 User.hasMany Device
 
@@ -115,33 +116,13 @@ WHERE provider_name=:provider_name
   AND provider_user_id=:provider_user_id;
 """
 
-SelectAccountUserFamilySQL = """
-SELECT
-  families.id,
-  families.created_at,
-  families.sitter_ids
-FROM
-  families
-JOIN
-  users ON families.id=family_id
-JOIN
-  accounts ON users.id=user_id
-WHERE provider_name=:provider_name
-  AND provider_user_id=:provider_user_id;
-"""
-
 accountKeyDeviceTokensP = (accountKey) ->
   [provider_name, provider_user_id] = accountKey.split('-', 2)
   sequelize.query(SelectDeviceTokensForAccountKeySQL, null, {raw:true}, {provider_name, provider_user_id}).then (rows) ->
     Q (token for {token} in rows)
 
-accountKeyUserFamilyP = (accountKey) ->
-  [provider_name, provider_user_id] = accountKey.split('-', 2)
-  sequelize.query(SelectAccountUserFamilySQL, Family, {}, {provider_name, provider_user_id}).then (rows) ->
-    Q rows[0]
-
-updateSitterListP = (accountKey, fn) ->
-  accountKeyUserFamilyP(accountKey).then (family) ->
+updateUserSitterListP = (user, fn) ->
+  user.getFamily().then (family) ->
     return unless family
     sitter_ids = fn(family.sitter_ids)
     return Q(false) unless sitter_ids
@@ -168,6 +149,5 @@ module.exports = {
 
   # Finders
   accountKeyDeviceTokensP
-  accountKeyUserFamilyP
-  updateSitterListP
+  updateUserSitterListP
 }
