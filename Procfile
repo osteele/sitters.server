@@ -1,2 +1,2 @@
-web: coffee web.coffee
-worker: coffee worker.coffee
+web: coffee server.coffee
+#worker: coffee worker.coffee

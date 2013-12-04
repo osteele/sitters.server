@@ -14,8 +14,7 @@ Copy .env.template to .env and fill in the values.
 
 # Running
 
-    coffee worker.coffee # just the workers
-    coffee web.coffee # workers and web server
+    coffee server.coffee
 
 
 # Develop

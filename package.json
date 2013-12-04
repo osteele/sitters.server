@@ -16,7 +16,8 @@
   "scripts": {
     "preinstall": "rm -rf node_modules/rollbar",
     "postinstall": "./bin/install-certificates",
-    "start": "foreman start"
+    "start": "foreman start",
+    "server": "coffee server.coffee"
   },
   "dependencies": {
     "coffee-script": "~1.6.3",
