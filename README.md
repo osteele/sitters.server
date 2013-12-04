@@ -32,6 +32,9 @@ Run `grunt watch:docs` to rebuild documentation as you save.
 Client -> Server requests are documented in `./worker.coffee`.
 If the documentation is built, this is also in `/build/docs/worker.html`.
 
+Server -> Client requests are documented in `./lib/messages.coffee`.
+If the documentation is built, this is also in `/build/docs/lib/messages.html`.
+
 
 # Developer Guidelines
 

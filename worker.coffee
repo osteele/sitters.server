@@ -24,12 +24,10 @@ _(global).extend require('./lib/models')
 
 
 #
-# Globals and Constants
+# Constants
 # --
 #
 
-# The client and server embed the API version in requests and responses.
-API_VERSION = 1
 DefaultSitterConfirmationDelay = process.env.DEFAULT_SITTER_CONFIRMATION_DELAY || 20
 MaxSitterCount = 7
 
@@ -101,49 +99,11 @@ updateSomeP = require('./lib/push_to_firebase').updateSomeP
 
 
 #
-# Client Messages
-# --
-#
-
-# `message`:
-# - `messageType`  : String -- client keys behavior off of this
-# - `messageTitle` : String -- UIAlert title
-# - `messageText`  : String -- UIAlert text; also, push notification text
-# - `parameters`   : Hash -- client interprets message against this
-sendMessageTo = (accountKey, message) ->
-  logger.info "Send -> #{accountKey}:", message
-
-  payload = _.extend {}, message,
-    timestamp: new Date().toISOString()
-    apiVersion: API_VERSION
-  messageId = MessageFB.child(accountKey).push(payload).name()
-
-  payload = _.extend {}, message
-  delete payload.messageText
-  accountKeyDeviceTokensP(accountKey).then (tokens) ->
-    for token in tokens
-      APNS.pushMessageTo token, alert:message.messageText, payload:payload
-
-SendClientMessage =
-  sitterAcceptedConnection: (accountKey, {sitter}) ->
-    sendMessageTo accountKey,
-      messageType: 'sitterAcceptedConnection'
-      messageTitle: 'Sitter Confirmed'
-      messageText: "#{sitter.firstName} has accepted your request. We’ve added her to your Seven Sitters."
-      parameters: {sitterId:sitter.id}
-
-  sitterConfirmedReservation: (accountKey, {sitter, startTime, endTime}) ->
-    sendMessageTo accountKey,
-      messageType: 'sitterConfirmedReservation'
-      messageTitle: 'Sitter Confirmed'
-      messageText: "#{sitter.firstName} has confirmed your request."
-      parameters: {sitterId:sitter.id, startTime:startTime.toISOString(), endTime:endTime.toISOString()}
-
-
-#
 # Request Handling
 # --
 #
+
+SendClientMessage = require './lib/messages'
 
 logger.info "Polling #{RequestFB}"
 
