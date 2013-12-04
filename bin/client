@@ -9,14 +9,14 @@ yaml = require 'js-yaml'
 Q = require 'q'
 _.str = require('underscore.string')
 _.mixin _.str.exports()
-
 stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 
 argv = require('optimist').argv
 process.env.FIREBASE_ENVIRONMENT = 'production' if argv.production
 
-firebase = require '../lib/firebase'
 _(global).extend require('../lib/utils')
+{User} = require './../lib/models'
+firebase = require '../lib/firebase'
 
 Date.prototype.setToBeginningOfHour = (hour) ->
   @setHours hour if hour?
@@ -39,8 +39,8 @@ Defaults = {
   userEmail           : 'mom@host.com'
 }
 
-do ->
-  [provider, id] = Defaults.userAuthId.split('-', 2)
+authenticateAsUser = (userAuthId) ->
+  [provider, id] = userAuthId.split('-', 2)
   firebase.authenticateAs {provider, id}
 
 RequestTypeGenerators =
@@ -143,17 +143,37 @@ cli = ->
       console.error "Unknown command: #{input}"
       cli()
 
-requestType = argv._[0]
-if requestType and _(requestType).camelize() of RequestTypeGenerators
-  requestType = _(requestType).camelize()
-  sendRequest(requestType).done -> process.exit()
-else if requestType
-  console.error "Unknown request type: #{requestType}"
-  usage()
+main = ->
+  requestType = argv._[0]
+  if requestType and _(requestType).camelize() of RequestTypeGenerators
+    requestType = _(requestType).camelize()
+    sendRequest(requestType).done -> process.exit()
+  else if requestType
+    console.error "Unknown request type: #{requestType}"
+    usage()
+    process.exit 1
+  else if argv.h or argv.help
+    usage()
+    process.exit()
+  else
+    printMessages()
+    cli()
+
+die = (msg) ->
+  console.error msg
   process.exit 1
-else if argv.h or argv.help
-  usage()
-  process.exit()
-else
-  printMessages()
-  cli()
+
+overrideDefaults = ->
+  if userId = argv['user-id']
+    User.find(where:{id:userId}).then (user) ->
+      die "No user ##{userId}" unless user
+      console.info "Simulating user ##{userId} <#{user.email}>"
+      Defaults.userName = user.displayName
+      Defaults.userEmail = user.email
+      user.getAccounts().then (accounts) ->
+        Defaults.userAuthId = accounts[0].authKey if accounts.length
+
+Q.when(overrideDefaults())
+  .then(-> authenticateAsUser Defaults.userAuthId)
+  .then(-> main())
+  .done()
