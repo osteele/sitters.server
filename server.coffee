@@ -1,4 +1,5 @@
-# Web server. Also includes workers, to run in same process.
+# Web server. Running this also includes workers, so that everything can be run in one process
+# for development simplicity and to reduce hosting costs prior to trial.
 
 #
 # Imports
@@ -7,7 +8,7 @@
 
 require('dotenv').load()
 kue = require './lib/kue'
-require './worker'
+require './workers'
 
 # Set the process's title so it's easier to find in `ps`, # `top`, Activity Monitor, and so on.
 process.title = 'sitters.server'
@@ -66,9 +67,9 @@ sessionStore = do ->
   options =
       host: url.host.replace(/:\d+/, '')
       port: Number(url.port)
-      pass: (url.auth || '').split(":")[1]
+      pass: (url.auth || '').split(':')[1]
   new RedisStore(options)
-sessionSecret = process.env.SESSION_SECRET || 'pmjTWbmydExed3AP6fqw'
+sessionSecret = process.env.SESSION_SECRET
 
 app.set 'views', __dirname + '/views'
 app.set 'view engine', 'jade'
@@ -90,6 +91,7 @@ app.configure ->
 app.get '/health', (request, response) ->
   response.send 'OK'
 
+# The client pings this to awaken the server after dropping a request in the Firebase queue.
 app.get '/ping', (request, response) ->
   response.send 'OK'
 

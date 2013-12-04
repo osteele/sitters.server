@@ -84,7 +84,11 @@ firebase = require './lib/firebase'
 _(global).extend firebase
 firebase.authenticateAs {}, {admin:true}
 
-updateSomeP = require('./lib/push_to_firebase').updateSomeP
+updateFirebaseFromDatabase = require('./lib/push_to_firebase').updateAllP
+
+# Work through backlog from previous server failure.
+updateFirebaseFromDatabase().then (count) ->
+  logger.info "Updated backlog of #{count} firebase records" if count > 0
 
 
 #
@@ -128,7 +132,9 @@ processRequest = (request) ->
     return
   promise = User.findByAccountKey(accountKey)
   promise = promise.then (user) -> handler {accountKey, user}, parameters
-  promise = promise.then -> updateSomeP()
+  # The request will generally update some database entities. Update Firebase from these.
+  # This will also work through some of a backlog in case of a previous server failure.
+  promise = promise.then -> updateFirebaseFromDatabase()
   return promise
 
 RequestHandlers = require './lib/request-handlers'
