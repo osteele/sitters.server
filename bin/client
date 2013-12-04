@@ -102,7 +102,7 @@ sendRequest = (requestType) ->
     return deferred.promise
 
 usage = ->
-  programName =  'create-request'
+  programName =  'client'
   console.error "Usage: #{programName} -h "
   console.error "       #{programName} [OPTIONS]"
   console.error "       #{programName} COMMAND [OPTIONS]"

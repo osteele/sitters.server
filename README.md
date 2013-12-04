@@ -14,7 +14,13 @@ Copy .env.template to .env and fill in the values.
 
 # Running
 
+Run the web server and workers:
+
     coffee server.coffee
+
+Run a simulated client in another terminal:
+
+    ./bin/client
 
 
 # Developer Documentation
