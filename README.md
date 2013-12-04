@@ -29,6 +29,8 @@ Run `grunt docs` to create source documentation in `./build/docs`.
 
 Run `grunt watch:docs` to rebuild documentation as you save.
 
+Environment variables are documented in `./env.template`.
+
 Client -> Server requests are documented in `./lib/request-handlers.coffee`.
 If the source documentation has been built, this is also documented in `/build/docs/lib/request-handlers.html`.
 
@@ -39,6 +41,8 @@ If the source documentation has been built, this is also documented in `/build/d
 # Developer Guidelines
 
 Code must pass `grunt lint`.
+
+Document new environment variables in `./env.template`.
 
 Match the style of the file you're editing. More specifically:
 
