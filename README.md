@@ -5,13 +5,14 @@ Install [Homebrew](http://brew.sh).
 
 Install dependencies (MacOS):
 
-        brew install git node postgresql redis
-        npm install
+    brew install git node postgresql redis
+    npm install
 
-Set git to rebase pulls:
+Configure git:
 
     git config branch.autosetuprebase always
     git config branch.master.rebase true
+    ln bin/pre-push-hook .git/hooks/pre-push
 
 Copy `.env.template` to `.env` and fill in the values:
 

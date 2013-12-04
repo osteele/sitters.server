@@ -4,4 +4,3 @@ remote="$1"
 url="$2"
 
 grunt lint
-false
