@@ -40,7 +40,7 @@ module.exports =
   # The parent sends this to invite a sitter who is already in the system to join the parent's family sitters. `delay`
   # is used for development and debugging; it sets the amount of time that one of the simulated sitters will wait before
   # responding.
-  addSitter: ({accountKey, user}, {sitterId, delay}) ->
+  addSitter: ({user}, {sitterId, delay}) ->
     delay ?= DefaultSitterConfirmationDelay
     sitter = null
     logger.info "Waiting #{delay}s" if delay > 0
@@ -57,24 +57,23 @@ module.exports =
     ).then((modified) ->
       logger.info "Sitter was already added" unless modified
       return unless modified
-      SendClientMessage.sitterAcceptedConnection accountKey, {sitter}
+      SendClientMessage.sitterAcceptedConnection user, {sitter}
     )
 
   # The client sends this when the user signs in, and on each launch if the user is already signed in. The server
   # creates or updates a Device record and associates it with the user, for use with mobile notifications.
-  registerDeviceToken: ({accountKey}, {token}) ->
-    [provider_name, provider_user_id] = accountKey.split('-', 2)
-    accountP = Account.find where: {provider_name, provider_user_id}
-    deviceP = Device.find where: {token}
-    Q.all([accountP, deviceP]).spread (account, device) ->
-      logger.info "Register device token=#{token} for device=#{device?.id} account=#{account?.id}"
-      return if device and account.user_id == device.user_id
+  registerDeviceToken: ({user}, {deviceUuid:uuid, token}) ->
+    user_id = user.id
+    deviceP = Device.find(where:{uuid})
+    .then (device) ->
+      logger.info "Register device token=#{token} for user ##{user.id}"
+      return if device?.user_id == user_id and device.token == token
       if device
         logger.info "Update device ##{device.id}"
-        device.updateAttributes user_id: account.user_id
+        device.updateAttributes {token, user_id}
       else
         logger.info "Register device"
-        Device.create {token, user_id: account.user_id}
+        Device.create {token, user_id}
 
   # The client sends this when the user enters a payment card. THe server ensures the existence of a Stripe customer for
   # this user, and creates or replaces the payment card. The server also stores the card display information in the
@@ -129,7 +128,7 @@ module.exports =
   # The client sends this when the user requests a specific sitter for a specific time.
   # `delay` is used for development and debugging; it sets the amount of time that one
   # of the simulated sitters will wait before responding.
-  reserveSitter: ({accountKey}, {sitterId, startTime, endTime, delay}) ->
+  reserveSitter: ({user}, {sitterId, startTime, endTime, delay}) ->
     delay ?= DefaultSitterConfirmationDelay
     startTime = new Date(startTime)
     endTime = new Date(endTime)
@@ -139,7 +138,7 @@ module.exports =
     ).then((sitter) ->
       logger.error "Unknown sitter ##{sitterId}" unless sitter
       return unless sitter
-      SendClientMessage.sitterConfirmedReservation accountKey, {sitter, startTime, endTime}
+      SendClientMessage.sitterConfirmedReservation user, {sitter, startTime, endTime}
     )
 
   # This message is used for testing. It changes the number of sitters associated with the user's family, filling them

@@ -122,25 +122,6 @@ User.findByAccountKey = (accountKey) ->
   sequelize.query(SelectUserByAccountKeySQL, User, {}, {provider_name, provider_user_id}).then (rows) ->
     Q rows[0]
 
-SelectDeviceTokensForAccountKeySQL = """
-SELECT
-  token
-FROM
-  devices
-JOIN
-  users ON users.id=devices.user_id
-JOIN
-  accounts ON accounts.user_id=users.id
-WHERE provider_name=:provider_name
-  AND provider_user_id=:provider_user_id;
-"""
-
-accountKeyDeviceTokensP = (accountKey) ->
-  [provider_name, provider_user_id] = accountKey.split('-', 2)
-  sequelize.query(SelectDeviceTokensForAccountKeySQL, null, {raw:true}, {provider_name, provider_user_id})
-  .then (rows) ->
-    Q (token for {token} in rows)
-
 updateUserSitterListP = (user, fn) ->
   user.getFamily().then (family) ->
     return unless family
@@ -169,6 +150,5 @@ module.exports = _.extend exports, {
   User
 
   # Finders
-  accountKeyDeviceTokensP
   updateUserSitterListP
 }

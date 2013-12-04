@@ -8,6 +8,7 @@
 require('dotenv').load()
 _ = require 'underscore'
 Q = require 'q'
+APNS = require('./push')
 _(global).extend require('./models')
 
 
@@ -45,32 +46,37 @@ firebase.authenticateAs {}, {admin:true}
 # - `messageTitle` : String -- UIAlert title
 # - `messageText`  : String -- UIAlert text; also, push notification text
 # - `parameters`   : Hash -- client interprets message against this
-sendMessageTo = (accountKey, message) ->
-  logger.info "Send -> #{accountKey}:", message
+sendMessageTo = (user, message) ->
+  logger.info "Send -> user ##{user.id}:", message
 
   payload = _.extend {}, message,
     timestamp: new Date().toISOString()
     apiVersion: API_VERSION
-  messageId = MessageFB.child(accountKey).push(payload).name()
+  user.getAccounts().then (accounts) ->
+    console.log 'account', accounts.length
+    accounts.forEach (account) ->
+      messageId = MessageFB.child(account.accountKey).push(payload).name()
 
   payload = _.extend {}, message
   delete payload.messageText
-  accountKeyDeviceTokensP(accountKey).then (tokens) ->
-    for token in tokens
-      APNS.pushMessageTo token, alert:message.messageText, payload:payload
+  user.getDevices().then (devices) ->
+    console.log 'device', devices.length
+    devices.forEach ({token}) ->
+      if token
+        APNS.pushMessageTo token, alert:message.messageText, payload:payload
 
 module.exports =
-  # The sitter accepted an invitation to join the family's sitter list. Tell the parent (accountKey).
-  sitterAcceptedConnection: (accountKey, {sitter}) ->
-    sendMessageTo accountKey,
+  # The sitter accepted an invitation to join the family's sitter list. Tell the parent (user).
+  sitterAcceptedConnection: (user, {sitter}) ->
+    sendMessageTo user,
       messageType: 'sitterAcceptedConnection'
       messageTitle: 'Sitter Confirmed'
       messageText: "#{sitter.firstName} has accepted your request. We’ve added her to your Seven Sitters."
       parameters: {sitterId:sitter.id}
 
-  # The sitter accepted a booking. Tell the parent (accountKey).
-  sitterConfirmedReservation: (accountKey, {sitter, startTime, endTime}) ->
-    sendMessageTo accountKey,
+  # The sitter accepted a booking. Tell the parent (user).
+  sitterConfirmedReservation: (user, {sitter, startTime, endTime}) ->
+    sendMessageTo user,
       messageType: 'sitterConfirmedReservation'
       messageTitle: 'Sitter Confirmed'
       messageText: "#{sitter.firstName} has confirmed your request."
