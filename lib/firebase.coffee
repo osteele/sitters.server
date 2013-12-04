@@ -6,9 +6,11 @@ FirebaseTokenGenerator = require("firebase-token-generator")
 TokenGenerator = new FirebaseTokenGenerator(process.env.FIREBASE_SECRET)
 
 FirebaseRoot = new Firebase('https://sevensitters.firebaseIO.com/')
-EnvironmentFB = FirebaseRoot.child(process.env.ENVIRONMENT || 'development')
+EnvironmentFB = do ->
+  prefix = process.env.FIREBASE_ENVIRONMENT || process.env.NODE_ENV || 'development'
+  FirebaseRoot.child(prefix)
 
-# Wrapper for `FirebaseRoot.auth`. Creates the token, and automatically renews it.
+# Wrapper for `FirebaseRoot.auth`. Creates the token, authenticates with a handler to renews it when it expires.
 authenticateAs = (data={}, options={}) ->
   token = TokenGenerator.createToken(data, options)
   FirebaseRoot.auth token, (error, result) ->

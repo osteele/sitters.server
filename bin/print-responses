@@ -6,7 +6,7 @@ yaml = require 'js-yaml'
 Q = require 'q'
 
 argv = require('optimist').argv
-process.env.ENVIRONMENT = 'production' if argv.production
+process.env.FIREBASE_ENVIRONMENT = 'production' if argv.production
 
 firebase = require '../lib/firebase'
 {MessageFB} = firebase

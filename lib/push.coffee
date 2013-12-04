@@ -26,7 +26,7 @@ CertificateDirectory = path.join(__dirname, '..', 'config')
 DefaultExpirationHours = 7 * 24
 
 APNServers = do ->
-  production = process.env.ENVIRONMENT == 'production'
+  production = process.env.NODE_ENV == 'production'
   gatewayServer = if production then 'gateway.push.apple.com' else 'gateway.sandbox.push.apple.com'
   feedbackServer = if production then 'feedback.push.apple.com' else 'feedback.sandbox.push.apple.com'
   { gatewayServer, feedbackServer }
