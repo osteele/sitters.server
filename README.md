@@ -25,15 +25,15 @@ Run a simulated client in another terminal:
 
 # Developer Documentation
 
-Run `grunt docs` to create API documentation in `./build/docs`.
+Run `grunt docs` to create source documentation in `./build/docs`.
 
 Run `grunt watch:docs` to rebuild documentation as you save.
 
-Client -> Server requests are documented in `./worker.coffee`.
-If the documentation is built, this is also in `/build/docs/worker.html`.
+Client -> Server requests are documented in `./lib/request-handlers.coffee`.
+If the source documentation has been built, this is also documented in `/build/docs/lib/request-handlers.html`.
 
 Server -> Client requests are documented in `./lib/messages.coffee`.
-If the documentation is built, this is also in `/build/docs/lib/messages.html`.
+If the source documentation has been built, this is also documented in `/build/docs/lib/messages.html`.
 
 
 # Developer Guidelines
