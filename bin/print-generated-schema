@@ -1,0 +1,8 @@
+#!/usr/bin/env coffee
+
+models = require '../lib/models'
+models.logger =
+  (msg) ->
+    console.log msg.replace(/^Executing:\s*/, '')
+
+models.sequelize.sync()

@@ -13,11 +13,14 @@ Q = require 'q'
 winston = require 'winston'
 if process.env.NODE_ENV == 'production'
   # In production, log sql to stdout so that it's routed to consolidated logging
-  loggerOptions = {console: {colorize:true, label:'sql'}}
+  loggerOptions = {console:{colorize:true, label:'sql'}}
 else
   # In development, route sql to a file so that it's out of the way but available via tail -f.
-  loggerOptions = {console: {silent:true}, file: {filename:__dirname + '/../logs/sql.log', json:false}}
+  loggerOptions = {console:{silent:true}, file:{filename:__dirname + '/../logs/sql.log', json:false}}
 logger = winston.loggers.add 'sql', loggerOptions
+
+# This is exported so that ./bin/print-generated-schema can override it
+exports.logger = (msg) -> logger.info msg
 
 
 #
@@ -29,7 +32,7 @@ Sequelize = require('sequelize-postgres').sequelize
 sequelize = new Sequelize process.env.DATABASE_URL,
   dialect: 'postgres'
   define: {underscored:true}
-  logging: (msg) -> logger.info msg
+  logging: (msg) -> exports.logger msg
   pool: { maxConnections:5, maxIdleTime:30 }
 
 
@@ -80,7 +83,7 @@ User = sequelize.define 'users',
 
 
 #
-# Associations
+# Module Associations
 # --
 #
 
@@ -93,10 +96,6 @@ User.hasMany Device
 User.belongsTo Family
 User.hasOne PaymentCustomer
 User.hasOne Sitter
-
-
-sequelize.sync()
-
 
 #
 # Custom Finders
@@ -153,7 +152,7 @@ updateUserSitterListP = (user, fn) ->
 # --
 #
 
-module.exports = {
+module.exports = _.extend exports, {
   # Connection Instance
   sequelize
 
