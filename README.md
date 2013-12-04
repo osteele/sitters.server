@@ -1,19 +1,19 @@
 # Setting up a Development Environment
 
-Install dependencies (MacOS):
 
-1. Install [Homebrew](http://brew.sh)
-2. Install brew and npm formulae:
+Install [Homebrew](http://brew.sh).
+
+Install dependencies (MacOS):
 
         brew install git node postgresql redis
         npm install
 
-Set git to rebase pulls.
+Set git to rebase pulls:
 
     git config branch.autosetuprebase always
     git config branch.master.rebase true
 
-Copy .env.template to .env and fill in the values.
+Copy `.env.template` to `.env` and fill in the values:
 
     cp .env.template .env
     $EDITOR .env
@@ -48,10 +48,10 @@ Run `grunt watch:docs` to rebuild documentation as you save.
 Environment variables are documented in `./env.template`.
 
 Client -> Server requests are documented in `./lib/request-handlers.coffee`.
-If the source documentation has been built, this is also documented in `/build/docs/lib/request-handlers.html`.
+If the source documentation has been built, this is also documented in `./build/docs/lib/request-handlers.html`.
 
 Server -> Client requests are documented in `./lib/messages.coffee`.
-If the source documentation has been built, this is also documented in `/build/docs/lib/messages.html`.
+If the source documentation has been built, this is also documented in `./build/docs/lib/messages.html`.
 
 
 # Developer Guidelines
@@ -64,8 +64,8 @@ Match the style of the file you're editing. More specifically:
 
 Style guides:
 
-- [SQL style](http://www.craigkerstiens.com/2012/11/17/how-i-write-sql/)
-- [Coffeescript style](https://github.com/polarmobile/coffeescript-style-guide) except:
+- SQL should follow [Craig Kerstiens’ guide](http://www.craigkerstiens.com/2012/11/17/how-i-write-sql/).
+- Coffeescript should follow [the Polarmobile style guide](https://github.com/polarmobile/coffeescript-style-guide) with these exceptions and additions:
   - Max line length is 120 chars (not 80 chars). `grunt lint` is thus configured.
   - Use parens `f(x)` for functions invoked for value. Omit parens `f x` for transitive functions in statement position, invoked for effect.
   - Prefer single quote `'strings'` to double quote `"strings"` where there's no interpolated parameters.
