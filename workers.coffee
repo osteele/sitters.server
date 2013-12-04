@@ -56,7 +56,7 @@ process.on 'uncaughtException', (err) ->
 # --
 #
 
-APNS = require('./lib/push')
+APNS = require('./lib/apns')
 
 APNS.connection.on 'transmissionError', (errCode, notification, device) ->
   return unless errCode == 8 # invalid token

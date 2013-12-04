@@ -36,7 +36,7 @@ connectionOptions = {
   key: path.join(CertificateDirectory, 'apns-dev-key.pem')
   gateway: APNServers.gatewayServer
 }
-console.log  connectionOptions
+
 connection = new apn.Connection(connectionOptions)
 connection.on 'connected', -> logger.info "Connected"
 connection.on 'transmitted', (notification, device) ->
