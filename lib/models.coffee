@@ -8,7 +8,6 @@ Q = require 'q'
 #
 # Configure Logging
 # --
-#
 
 winston = require 'winston'
 if process.env.NODE_ENV == 'production'
@@ -26,7 +25,6 @@ exports.logger = (msg) -> logger.info msg
 #
 # Database Connection
 # --
-#
 
 Sequelize = require('sequelize-postgres').sequelize
 sequelize = new Sequelize process.env.DATABASE_URL,
@@ -42,7 +40,6 @@ sequelize.execute = (string, parameters={}) ->
 #
 # Define Models
 # --
-#
 
 # An Account holds the third-party information by which a user authenticates.
 # In the future, a User may have several Accounts, if they connect to multiple providers
@@ -88,7 +85,6 @@ User = sequelize.define 'users',
 #
 # Module Associations
 # --
-#
 
 Account.belongsTo User
 Family.hasMany User
@@ -103,7 +99,6 @@ User.hasOne Sitter
 #
 # Custom Finders
 # --
-#
 
 SelectUserByAccountKeySQL = """
 SELECT
@@ -135,7 +130,6 @@ updateUserSitterListP = (user, fn) ->
 #
 # Exports
 # --
-#
 
 module.exports = _.extend exports, {
   # Connection Instance

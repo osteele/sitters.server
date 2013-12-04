@@ -4,7 +4,6 @@
 #
 # Imports
 # --
-#
 
 require('dotenv').load()
 kue = require './lib/kue'
@@ -17,7 +16,6 @@ process.title = 'sitters.server'
 #
 # Configure Logging
 # --
-#
 
 Winston = require 'winston'
 logger = Winston.loggers.add 'web', console:{colorize:true, label:'web'}
@@ -26,7 +24,6 @@ logger = Winston.loggers.add 'web', console:{colorize:true, label:'web'}
 #
 # Configure Auth
 # --
-#
 
 passport = require 'passport'
 GitHubStrategy = require('passport-github').Strategy
@@ -56,7 +53,6 @@ requireAdmin = (req, res, next) ->
 #
 # Server Application
 # --
-#
 
 express = require("express")
 app = express()
@@ -99,7 +95,6 @@ app.get '/ping', (request, response) ->
 #
 # Login
 # --
-#
 
 app.get '/auth/github',
   passport.authenticate('github'),
@@ -120,7 +115,6 @@ app.get '/logout', (req, res) ->
 #
 # User Pages
 # --
-#
 
 app.get '/', (req, res) ->
   res.render 'index'
@@ -129,7 +123,6 @@ app.get '/', (req, res) ->
 #
 # Admin Pages
 # --
-#
 
 app.get '/admin', requireAdmin, (req, res) ->
   res.render 'admin'
@@ -138,7 +131,6 @@ app.get '/admin', requireAdmin, (req, res) ->
 #
 # Start Server
 # --
-#
 
 port = process.env.PORT || 5000
 app.listen port, ->

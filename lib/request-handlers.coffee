@@ -1,7 +1,6 @@
 #
 # Imports
 # --
-#
 
 require('dotenv').load()
 _ = require 'underscore'
@@ -14,7 +13,6 @@ _(global).extend require('./models')
 #
 # Constants
 # --
-#
 
 DefaultSitterConfirmationDelay = process.env.DEFAULT_SITTER_CONFIRMATION_DELAY || 20
 MaxSitterCount = 7
@@ -23,7 +21,6 @@ MaxSitterCount = 7
 #
 # Configure Logging
 # --
-#
 
 Winston = require 'winston'
 logger = Winston.loggers.add 'requests', console:{colorize:true, label:'requests'}
@@ -32,7 +29,6 @@ logger = Winston.loggers.add 'requests', console:{colorize:true, label:'requests
 #
 # Request types
 # --
-#
 
 SendClientMessage = require './messages'
 

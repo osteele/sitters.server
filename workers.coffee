@@ -9,7 +9,6 @@ process.title = 'sitters.workers'
 #
 # Imports
 # --
-#
 
 require('dotenv').load()
 _ = require 'underscore'
@@ -25,7 +24,6 @@ _(global).extend require('./lib/models')
 #
 # Configure Logging
 # --
-#
 
 Winston = require 'winston'
 logger = Winston.loggers.add 'workers', console:{colorize:true, label:'workers'}
@@ -34,7 +32,6 @@ logger = Winston.loggers.add 'workers', console:{colorize:true, label:'workers'}
 #
 # Rollbar integration
 # --
-#
 
 if process.env.ROLLBAR_ACCESS_TOKEN
   rollbar = require 'rollbar'
@@ -54,7 +51,6 @@ process.on 'uncaughtException', (err) ->
 #
 # APNS
 # --
-#
 
 APNS = require('./lib/apns')
 
@@ -78,7 +74,6 @@ APNS.feedback.on 'feedback', (devices) ->
 #
 # Firebase
 # --
-#
 
 firebase = require './lib/firebase'
 _(global).extend firebase
@@ -94,7 +89,6 @@ updateFirebaseFromDatabase().then (count) ->
 #
 # Request Handling
 # --
-#
 
 
 logger.info "Polling #{RequestFB}"

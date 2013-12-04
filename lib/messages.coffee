@@ -3,7 +3,6 @@
 #
 # Imports
 # --
-#
 
 require('dotenv').load()
 _ = require 'underscore'
@@ -15,7 +14,6 @@ _(global).extend require('./models')
 #
 # Constants
 # --
-#
 
 # The client and server embed the API version in requests and responses.
 API_VERSION = 1
@@ -24,7 +22,6 @@ API_VERSION = 1
 #
 # Configure Logging
 # --
-#
 
 Winston = require 'winston'
 logger = Winston.loggers.add 'messages', console:{colorize:true, label:'messages'}
@@ -33,7 +30,6 @@ logger = Winston.loggers.add 'messages', console:{colorize:true, label:'messages
 #
 # Firebase
 # --
-#
 
 firebase = require './firebase'
 _(global).extend firebase
