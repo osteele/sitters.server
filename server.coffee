@@ -4,6 +4,7 @@ require('dotenv').load()
 kue = require './lib/kue'
 require './worker'
 
+
 #
 # Configure Logging
 # --
@@ -11,6 +12,7 @@ require './worker'
 
 Winston = require 'winston'
 logger = Winston.loggers.add 'web', console:{colorize:true, label:'web'}
+
 
 #
 # Configure Auth
@@ -28,13 +30,13 @@ passport.deserializeUser (obj, done) ->
   done null, obj
 
 passport.use new GitHubStrategy {
-    clientID: process.env.GITHUB_CLIENT_ID
-    clientSecret: process.env.GITHUB_CLIENT_SECRET
-    callbackURL: process.env.GITHUB_CALLBACK_URL
-  }, (accessToken, refreshToken, profile, done) ->
-    username = profile.username
-    roles = if username in GithubAdminIds then ['admin'] else []
-    done null, {username, roles}
+  clientID: process.env.GITHUB_CLIENT_ID
+  clientSecret: process.env.GITHUB_CLIENT_SECRET
+  callbackURL: process.env.GITHUB_CALLBACK_URL
+}, (accessToken, refreshToken, profile, done) ->
+  username = profile.username
+  roles = if username in GithubAdminIds then ['admin'] else []
+  done null, {username, roles}
 
 requireAdmin = (req, res, next) ->
   return res.redirect '/login' unless req.isAuthenticated()

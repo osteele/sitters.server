@@ -35,6 +35,9 @@ sequelize = new Sequelize process.env.DATABASE_URL,
   logging: (msg) -> exports.logger msg
   pool: { maxConnections:5, maxIdleTime:30 }
 
+sequelize.execute = (string, parameters={}) ->
+  sequelize.query string, null, {raw:true}, parameters
+
 
 #
 # Define Models
@@ -134,7 +137,8 @@ WHERE provider_name=:provider_name
 
 accountKeyDeviceTokensP = (accountKey) ->
   [provider_name, provider_user_id] = accountKey.split('-', 2)
-  sequelize.query(SelectDeviceTokensForAccountKeySQL, null, {raw:true}, {provider_name, provider_user_id}).then (rows) ->
+  sequelize.query(SelectDeviceTokensForAccountKeySQL, null, {raw:true}, {provider_name, provider_user_id})
+  .then (rows) ->
     Q (token for {token} in rows)
 
 updateUserSitterListP = (user, fn) ->

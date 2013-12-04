@@ -15,7 +15,18 @@ jobs = kue.createQueue()
 stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 _(global).extend require('./lib/models')
 
+
+#
+# Globals and Constants
+# --
+#
+
+# The client and server embed the API version in requests and responses.
 API_VERSION = 1
+DefaultSitterConfirmationDelay = process.env.DEFAULT_SITTER_CONFIRMATION_DELAY || 20
+MaxSitterCount = 7
+
+
 
 #
 # Configure Logging
@@ -57,17 +68,17 @@ APNS.connection.on 'transmissionError', (errCode, notification, device) ->
   return unless errCode == 8 # invalid token
   token = device.token.toString('hex')
   logger.info "Removing device token=#{token}"
-  sequelize.query('DELETE FROM devices WHERE token=:token', null, {raw:true}, {token}).then(->
-    logger.info "Deleted token=#{token}"
-  ).done()
+  sequelize.query('DELETE FROM devices WHERE token=:token', null, {raw:true}, {token})
+    .then(-> logger.info "Deleted token=#{token}")
+    .done()
 
 # TODO race condition with database initialization
 APNS.feedback.on 'feedback', (devices) ->
   devices.forEach (item) ->
     token = item.device.token.toString('hex')
-    sequelize.query('DELETE FROM devices WHERE token=:token AND updated_at < :time', null, {raw:true}, {token, time: item.time}).then(->
-      logger.info "Deleted token=#{token}"
-    ).done()
+    sequelize.execute('DELETE FROM devices WHERE token=:token AND updated_at<:time', {token, time:item.time})
+      .then -> logger.info "Deleted token=#{token}"
+      .done()
 
 
 #
@@ -75,14 +86,11 @@ APNS.feedback.on 'feedback', (devices) ->
 # --
 #
 
-Firebase = require('./lib/firebase')
-_(global).extend Firebase
-Firebase.authenticateAs {}, {admin:true}
+firebase = require './lib/firebase'
+_(global).extend firebase
+firebase.authenticateAs {}, {admin:true}
 
-# protect from partial application
-updateFirebaseFromDatabaseP = do ->
-  fn = require('./lib/push_to_firebase').updateSomeP
-  -> fn()
+updateSomeP = require('./lib/push_to_firebase').updateSomeP
 
 
 #
@@ -111,18 +119,18 @@ sendMessageTo = (accountKey, message) ->
 
 SendClientMessage =
   sitterAcceptedConnection: (accountKey, {sitter}) ->
-      sendMessageTo accountKey,
-        messageType: 'sitterAcceptedConnection'
-        messageTitle: 'Sitter Confirmed'
-        messageText: "#{sitter.firstName} has accepted your request. We’ve added her to your Seven Sitters."
-        parameters: {sitterId:sitter.id}
+    sendMessageTo accountKey,
+      messageType: 'sitterAcceptedConnection'
+      messageTitle: 'Sitter Confirmed'
+      messageText: "#{sitter.firstName} has accepted your request. We’ve added her to your Seven Sitters."
+      parameters: {sitterId:sitter.id}
 
   sitterConfirmedReservation: (accountKey, {sitter, startTime, endTime}) ->
-      sendMessageTo accountKey,
-        messageType: 'sitterConfirmedReservation'
-        messageTitle: 'Sitter Confirmed'
-        messageText: "#{sitter.firstName} has confirmed your request."
-        parameters: {sitterId:sitter.id, startTime:startTime.toISOString(), endTime:endTime.toISOString()}
+    sendMessageTo accountKey,
+      messageType: 'sitterConfirmedReservation'
+      messageTitle: 'Sitter Confirmed'
+      messageText: "#{sitter.firstName} has confirmed your request."
+      parameters: {sitterId:sitter.id, startTime:startTime.toISOString(), endTime:endTime.toISOString()}
 
 
 #
@@ -130,11 +138,10 @@ SendClientMessage =
 # --
 #
 
-DefaultSitterConfirmationDelay = process.env.DEFAULT_SITTER_CONFIRMATION_DELAY || 20
-MaxSitterCount = 7
-
 logger.info "Polling #{RequestFB}"
 
+# The client pushes requests to Firebase, which handles auth.
+# Move them from Firebase to the job queue.
 RequestFB.on 'child_added', (snapshot) ->
   key = snapshot.name()
   request = snapshot.val()
@@ -143,27 +150,30 @@ RequestFB.on 'child_added', (snapshot) ->
   RequestFB.child(key).remove()
 
 jobs.process 'request', (job, done) ->
-  processRequest(job.data.request).then(
-    -> done()
-    (err) ->
-      logger.error err
-      rollbar.handleError err
-      done err
-  ).done()
+  processRequest(job.data.request)
+    .then(
+      -> done()
+      (err) ->
+        logger.error err
+        rollbar.handleError err
+        done err
+    ).done()
 
 processRequest = (request) ->
   {userAuthId, requestType, parameters} = request
   rollbar.reportMessage "Process #{requestType}", 'info'
   accountKey = userAuthId.replace('/', '-')
   parameters ||= {}
-  logger.info "Processing request #{requestType} from #{accountKey} with #{JSON.stringify(parameters).replace(/"(\w+)":/g, '$1:')}"
+  do ->
+    parametersString = JSON.stringify(parameters).replace(/"(\w+)":/g, '$1:')
+    logger.info "Processing request #{requestType} from #{accountKey} with #{parametersString}"
   handler = RequestHandlers[requestType]
   unless handler
     logger.error "Unknown request type #{requestType}"
     return
   promise = User.findByAccountKey(accountKey)
   promise = promise.then (user) -> handler {accountKey, user}, parameters
-  promise = promise.then updateFirebaseFromDatabaseP
+  promise = promise.then -> updateSomeP()
   return promise
 
 RequestHandlers =
@@ -171,9 +181,9 @@ RequestHandlers =
     delay ?= DefaultSitterConfirmationDelay
     sitter = null
     logger.info "Waiting #{delay}s" if delay > 0
-    Q.delay(delay * 1000).then(->
-      Sitter.find(sitterId)
-    ).then((sitter_) ->
+    Q.delay(delay * 1000)
+    .then(-> Sitter.find(sitterId))
+    .then((sitter_) ->
       sitter = sitter_
       logger.error "Unknown sitter ##{sitterId}" unless sitter
       return unless sitter

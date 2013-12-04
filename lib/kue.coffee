@@ -1,4 +1,5 @@
-# Adaptor to kue. Modifies the default kue client to connect to redis instead of localhost, if `REDISTOGO_URL` is in the environment.
+# Adaptor to kue.
+# Modifies the default kue client to connect to redis instead of localhost, if `REDISTOGO_URL` is in the environment.
 
 kue = require('kue')
 
