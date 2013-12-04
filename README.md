@@ -1,14 +1,30 @@
-# Installation
+# Setting up a Development Environment
 
-    brew install node postgresql redis
-    npm install
+Install dependencies (MacOS):
 
-    psql -d postgres -c 'create database sitters'
-    psql -d postgres -c 'create user sitters'
+1. Install [Homebrew](http://brew.sh)
+2. Install brew and npm formulae:
+
+        brew install git node postgresql redis
+        npm install
+
+Set git to rebase pulls.
+
+    git config branch.autosetuprebase always
+    git config branch.master.rebase true
 
 Copy .env.template to .env and fill in the values.
 
-    ./bin/populate-demo-sitters
+    cp .env.template .env
+    $EDITOR .env
+    # fill in value for FIREBASE_SECRET
+
+Create the database and initialize it.
+
+    psql -d postgres -c 'create database sitters'
+    psql -d postgres -c 'create user sitters'
+    ./bin/create-database-tables
+    ./bin/create-demo-sitters
     ./bin/update-triggers
 
 
