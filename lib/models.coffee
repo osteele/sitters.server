@@ -31,6 +31,7 @@ sequelize = new Sequelize process.env.DATABASE_URL,
   dialect: 'postgres'
   define: {underscored:true}
   logging: (msg) -> exports.logger msg
+  omitNull: true
   pool: { maxConnections:5, maxIdleTime:30 }
 
 sequelize.execute = (string, parameters={}) ->

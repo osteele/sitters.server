@@ -47,7 +47,7 @@ RequestTypeGenerators =
   addSitter: -> {delay:Defaults.sitterResponseDelay, sitterId:Defaults.sitterId}
 
   registerDeviceToken: ->
-    {token:Defaults.deviceApnsToken}
+    {token:Defaults.deviceApnsToken, deviceUuid:Defaults.deviceUuid}
 
   registerPaymentToken: ->
     card = Defaults.card
@@ -81,7 +81,7 @@ mergeCommandLineParameters = (parameters) ->
       parameters[key] = optionValue
   return parameters
 
-sendRequest = (requestType) ->
+sendRequest = (requestType, printMessage=argv['verbose']) ->
   parameters = RequestTypeGenerators[requestType].call(mode:'run')
   Q.resolve(parameters).then (parameters) ->
     request = {
@@ -92,7 +92,7 @@ sendRequest = (requestType) ->
       timestamp   : new Date().toISOString()
       userAuthId  : Defaults.userAuthId
     }
-    if argv['verbose']
+    if printMessage
       console.info 'Message:'
       console.info yaml.dump(request).replace(/(^|\n)/g, '$1  ')
     deferred = Q.defer()
@@ -135,7 +135,7 @@ cli = ->
     requestType = requestNames[input]
     if requestType
       console.info "Sending request: #{requestType}"
-      sendRequest(requestType).done ->
+      sendRequest(requestType, true).done ->
         # wait so that if there's a message it shows up before the prompt
         Q.delay(500).then ->
           console.info ''; cli()

@@ -62,14 +62,14 @@ module.exports =
     user_id = user.id
     deviceP = Device.find(where:{uuid})
     .then (device) ->
-      logger.info "Register device token=#{token} for user ##{user.id}"
+      logger.info "Register device #{uuid} for user ##{user.id}"
       return if device?.user_id == user_id and device.token == token
       if device
         logger.info "Update device ##{device.id}"
         device.updateAttributes {token, user_id}
       else
-        logger.info "Register device"
-        Device.create {token, user_id}
+        logger.info "Register device", {uuid, token, user_id}
+        Device.create {uuid, token, user_id}
 
   # The client sends this when the user enters a payment card. THe server ensures the existence of a Stripe customer for
   # this user, and creates or replaces the payment card. The server also stores the card display information in the
