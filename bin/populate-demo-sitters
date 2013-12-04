@@ -6,15 +6,29 @@ Q.longStackSupport = true
 _(global).extend require('../lib/models')
 sitters = require '../data/sitters.json'
 
-createSittersP = Q.all sitters.map (sitter) ->
-  id = sitter.id
-  data = _.extend {}, sitter
-  delete data.id
+createSittersP = Q.all sitters.map (sitterData) ->
+  sitterId = sitterData.id
+  sitterData = _.extend {}, sitterData
+  delete sitterData.id
 
-  console.info 'Updating', id, sitter.name
-  Sitter.findOrCreate({id}, {data}).then (sitter) ->
-    sitter.data = data
-    sitter.save()
+  console.info 'Updating', sitterId, sitterData.name
+  Sitter.findOrCreate(id:sitterId)
+  .then (sitter) ->
+    sitter.updateAttributes(data:sitterData, is_simulated:true)
+  .then (sitter) -> sitter.getUser()
+  .then (user) ->
+    user or User.create().then (user) -> user.setSitter(sitter)
+  .then (user) ->
+    phone = "415 555-000#{sitterId}"
+    user.updateAttributes {phone, is_simulated:true}
+    # user.getSitter().then (x) -> console.log x
+
+
+        # defined:
+        # console.log user.setSitter
+
+    # User.findOrCreate(sitter_id:sitterId).then (user) ->
+  # ]
 
 createSittersP
   .catch( (error) -> console.error error )
