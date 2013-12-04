@@ -8,15 +8,15 @@ Q = require 'q'
 argv = require('optimist').argv
 process.env.ENVIRONMENT = 'production' if argv.production
 
-Firebase = require '../lib/firebase'
-{MessageFB} = Firebase
+firebase = require '../lib/firebase'
+{MessageFB} = firebase
 _(global).extend require('../lib/utils')
 
 UserAuthId = 'facebook-172347878787877'
 
 do ->
   [provider, id] = UserAuthId.split('-', 2)
-  Firebase.authenticateAs {provider, id}
+  firebase.authenticateAs {provider, id}
 
 userMessageFB = MessageFB.child(UserAuthId)
 
@@ -35,7 +35,7 @@ else
     promises = []
     for key, message of messages
       printMessage message
-      promises.push Firebase.fbRemoveP userMessageFB.child(key) if argv.remove or argv.delete
+      promises.push firebase.fbRemoveP userMessageFB.child(key) if argv.remove or argv.delete
     unless messages
       console.log "No messages"
     Q.all(promises).done ->

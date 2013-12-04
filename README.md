@@ -36,6 +36,7 @@ Style guides:
 - [Coffeescript style](https://github.com/polarmobile/coffeescript-style-guide) except:
   - Max line length is 120 chars (not 80 chars). `grunt lint` is thus configured.
   - Use parens `f(x)` for functions invoked for value. Omit parens `f x` for transitive functions in statement position, invoked for effect.
+  - Prefer single quote `'strings'` to double quote `"strings"` where there's no interpolated parameters.
 
 
 # Service Dashboards

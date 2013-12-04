@@ -1,8 +1,16 @@
 # Web server. Also includes workers, to run in same process.
 
+#
+# Imports
+# --
+#
+
 require('dotenv').load()
 kue = require './lib/kue'
 require './worker'
+
+# Set the process's title so it's easier to find in `ps`, # `top`, Activity Monitor, and so on.
+process.title = 'sitters.server'
 
 
 #

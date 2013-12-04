@@ -1,3 +1,10 @@
+# This file defines the worker processes that process client requests.
+#
+# It can be run standalone, and is also currently run as part of the web server.
+
+# Set the process's title so it's easier to find in `ps`, # `top`, Activity Monitor, and so on.
+process.title = 'sitters.workers'
+
 
 #
 # Imports
