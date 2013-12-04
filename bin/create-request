@@ -30,7 +30,7 @@ Defaults = {
   deviceApnsToken     : '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
   deviceUuid          : '68753A44-4D6F-1226-9C60-0050E4C00067'
   sitterCount         : 2
-  sitterId            : 2
+  sitterId            : 3
   sitterResponseDelay : 0
   sitterStartTime     : new Date().tap -> @setToBeginningOfHour(18)
   sitterEndTime       : new Date().tap -> @setToBeginningOfHour(22)
@@ -101,26 +101,46 @@ sendRequest = (requestType) ->
     console.info '->', requestFb.toString() if argv['verbose']
     return deferred.promise
 
-help = ->
-  programName =  './' + path.relative(process.cwd(), argv.$0.replace(/^coffee\s+/, ''))
-  console.info "Usage: #{programName} COMMAND [OPTIONS]"
-  console.info "Commands:"
+usage = ->
+  programName =  'create-request'
+  console.error "Usage: #{programName} -h "
+  console.error "       #{programName} [OPTIONS]"
+  console.error "       #{programName} COMMAND [OPTIONS]"
+  console.error "\nwhere COMMAND [OPTIONS] is one of:"
   for key, optionsFn of RequestTypeGenerators
     options = optionsFn.call(mode:'help')
-    console.info ' ', _(key).dasherize(), ("--#{_(option).dasherize()}=#{util.inspect(v)}" for option, v of options).join(' ')
+    console.error ' ', _(key).dasherize(), ("--#{_(option).dasherize()}=#{util.inspect(v)}" for option, v of options).join(' ')
+
+printMessage = (message) ->
+  console.info "\nReceived message:"
+  console.info yaml.dump(message).replace(/(^|\n)/g, "$1  ")
+
+printMessages = ->
+  userMessageFB = firebase.MessageFB.child(Defaults.userAuthId)
+  userMessageFB.on 'child_added', (snapshot) ->
+    key = snapshot.name()
+    message = snapshot.val()
+    printMessage message
+    userMessageFB.child(key).remove()
 
 cli = ->
-  requestTypes = _.keys(RequestTypeGenerators)
-  requestTypes.forEach (name, i) -> console.log "[#{i}] #{name}"
-  console.log '[Q] quit'
+  requestNames = {}
+  _.keys(RequestTypeGenerators).forEach (name, i) -> requestNames[i + 1] = name
+  console.info "Select a request:"
+  _.map requestNames, (value, key) -> console.info "[#{key}] #{value}"
+  console.info '[q] quit'
   read prompt:'? ', (err, input) ->
     process.exit() if input.match(/^q$/i)
-    requestType = requestTypes[input]
+    console.info "\n"
+    requestType = requestNames[input]
     if requestType
-      console.info "Sending #{requestType}"
-      sendRequest(requestType).done -> console.info ''; cli()
+      console.info "Sending request: #{requestType}"
+      sendRequest(requestType).done ->
+        # wait so that if there's a message it shows up before the prompt
+        Q.delay(500).then ->
+          console.info ''; cli()
     else
-      console.info "Unknown command: #{input}"
+      console.error "Unknown command: #{input}"
       cli()
 
 requestType = argv._[0]
@@ -129,10 +149,11 @@ if requestType and _(requestType).camelize() of RequestTypeGenerators
   sendRequest(requestType).done -> process.exit()
 else if requestType
   console.error "Unknown request type: #{requestType}"
-  help()
+  usage()
   process.exit 1
-else if argv.i or argv.console
-  cli()
-else
-  help()
+else if argv.h or argv.help
+  usage()
   process.exit()
+else
+  printMessages()
+  cli()
