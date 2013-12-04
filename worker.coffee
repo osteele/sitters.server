@@ -106,10 +106,10 @@ updateSomeP = require('./lib/push_to_firebase').updateSomeP
 #
 
 # `message`:
-#   messageType  : String -- client keys behavior off of this
-#   messageTitle : String -- UIAlert title
-#   messageText  : String -- UIAlert text; also, push notification text
-#   parameters   : Hash -- client interprets message against this
+# - `messageType`  : String -- client keys behavior off of this
+# - `messageTitle` : String -- UIAlert title
+# - `messageText`  : String -- UIAlert text; also, push notification text
+# - `parameters`   : Hash -- client interprets message against this
 sendMessageTo = (accountKey, message) ->
   logger.info "Send -> #{accountKey}:", message
 
@@ -184,6 +184,9 @@ processRequest = (request) ->
   return promise
 
 RequestHandlers =
+  # The parent sends this to invite a sitter who is already in the system to join the parent's family sitters. `delay`
+  # is used for development and debugging; it sets the amount of time that one of the simulated sitters will wait before
+  # responding.
   addSitter: ({accountKey, user}, {sitterId, delay}) ->
     delay ?= DefaultSitterConfirmationDelay
     sitter = null
@@ -204,6 +207,8 @@ RequestHandlers =
       SendClientMessage.sitterAcceptedConnection accountKey, {sitter}
     )
 
+  # The client sends this when the user signs in, and on each launch if the user is already signed in. The server
+  # creates or updates a Device record and associates it with the user, for use with mobile notifications.
   registerDeviceToken: ({accountKey}, {token}) ->
     [provider_name, provider_user_id] = accountKey.split('-', 2)
     accountP = Account.find where: {provider_name, provider_user_id}
@@ -218,6 +223,9 @@ RequestHandlers =
         logger.info "Register device"
         Device.create {token, user_id: account.user_id}
 
+  # The client sends this when the user enters a payment card. THe server ensures the existence of a Stripe customer for
+  # this user, and creates or replaces the payment card. The server also stores the card display information in the
+  # database, for display in the client UI.
   registerPaymentToken: ({user}, {token, cardInfo}) ->
     PaymentCustomer.findOrCreate(user_id:user.id).then (customerRow) ->
       email = user.email
@@ -233,6 +241,9 @@ RequestHandlers =
           PaymentCustomer.findOrCreate({user_id:user.id}, attrs).then (customerRow) ->
             customerRow.updateAttributes attrs
 
+  # The client sends this when a user signs in, and on each launch if the user is already signed in. The server ensures
+  # that a User record exists, associates it with the account that the user authenticated with, and ensures that a
+  # Family for this user exists.
   registerUser: ({accountKey}, {displayName, email}) ->
     [provider_name, provider_user_id] = accountKey.split('-', 2)
     accountP = Account.findOrCreate {provider_name, provider_user_id}
@@ -240,7 +251,6 @@ RequestHandlers =
     Q.all([accountP, userP]).spread (account, user) ->
       logger.info "Account key=#{accountKey}" if account
       logger.info "Update account #{account?.id} user_id=#{user?.id}"
-      # return if user.hasAccount(account)
       Q.all [
         account.updateAttributes user_id:user.id
         user.updateAttributes {displayName} #unless user.displayName == displayName,
@@ -250,6 +260,7 @@ RequestHandlers =
             user.updateAttributes family_id:family.id
       ]
 
+  # The client sends this when the user removes their payment card.
   removePaymentCard: ({user}, {}) ->
     PaymentCustomer.find(where: {user_id:user.id}).then (customerRow) ->
       stripeCustomerId = customerRow?.stripe_customer_id
@@ -262,6 +273,9 @@ RequestHandlers =
         else
           removeCardInfo()
 
+  # The client sends this when the user requests a specific sitter for a specific time.
+  # `delay` is used for development and debugging; it sets the amount of time that one
+  # of the simulated sitters will wait before responding.
   reserveSitter: ({accountKey}, {sitterId, startTime, endTime, delay}) ->
     delay ?= DefaultSitterConfirmationDelay
     startTime = new Date(startTime)
@@ -275,12 +289,16 @@ RequestHandlers =
       SendClientMessage.sitterConfirmedReservation accountKey, {sitter, startTime, endTime}
     )
 
+  # This message is used for testing. It changes the number of sitters associated with the user's family, filling them
+  # in as needed from the simulated sitters.
   setSitterCount: ({user}, {count}) ->
     updateUserSitterListP user, (sitter_ids) ->
       count = Math.max(0, Math.min(MaxSitterCount, count))
       return if sitter_ids.length == count
       return _.uniq(sitter_ids.concat([1..MaxSitterCount]))[0...count]
 
+  # This message is used for testing, to test server error handling and reporting. It throws an error. If running in the
+  # production environment, it only throws an error if the `DEBUG_SERVER` environment variable is set.
   simulateServerError: ->
     if process.env.NODE_ENV == 'production' and not process.env.DEBUG_SERVER
       logger.info "Ignoring simulated server error"

@@ -29,6 +29,9 @@ Run `grunt docs` to create API documentation in `./build/docs`.
 
 Run `grunt watch:docs` to rebuild documentation as you save.
 
+Client -> Server requests are documented in `./worker.coffee`.
+If the documentation is built, this is also in `/build/docs/worker.html`.
+
 
 # Developer Guidelines
 
