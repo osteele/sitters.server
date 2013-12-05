@@ -1,3 +1,5 @@
+#!/usr/bin/env
+
 # Web server. Running this also includes workers, so that everything can be run in one process
 # for development simplicity and to reduce hosting costs prior to trial.
 

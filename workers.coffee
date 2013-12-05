@@ -1,3 +1,5 @@
+#!/usr/bin/env coffee
+
 # This file defines the worker processes that process client requests.
 #
 # It can be run standalone, and is also currently run as part of the web server.
