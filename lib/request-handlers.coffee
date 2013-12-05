@@ -61,17 +61,20 @@ module.exports =
       initiator_id : parent.id
       recipient_id : sitterId
     Invitation.findOrCreate(invitationAttributes).then (invitation) ->
-      return if invitation.status == 'sent'
+      console.info "Created invitation ##{invitation.id}" unless invitation.status
+      if invitation.status == 'sent'
+        console.info "Already sent invitation ##{invitation.id}"
+        return
       Sitter.find(sitterId)
       .then((sitter) -> sitter.getUser())
-      .then((sitter) -> SendClientMessage.inviteSitterToFamily sitter, {invitation, parent})
+      .then((sitter) -> SendClientMessage.inviteSitterToFamily sitter, {invitation, parent, delay})
       .then(-> invitation.updateAttributes status:'sent')
 
   # #### Sitter accepts invitation
   #
   acceptInvitation: ({user:sitter}, {invitationId}) ->
     Invitation.find(invitationId).then (invitation) ->
-      return unless invitation.status == 'sent'
+      return unless invitation?.status == 'sent'
       # invitation.getInitiator().then (parent) ->
       User.find(invitation.initiator_id).then (parent) ->
         Q.all [

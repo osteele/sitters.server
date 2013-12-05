@@ -61,12 +61,12 @@ sendMessageTo = (user, message) ->
         APNS.pushMessageTo token, alert:message.messageText, payload:payload
 
 module.exports =
-  inviteSitterToFamily: (sitter, {invitation, parent}) ->
+  inviteSitterToFamily: (sitter, {invitation, parent, delay}) ->
     sendMessageTo sitter,
       messageType: 'inviteSitterToFamily'
       messageTitle: 'Sitter Request'
       messageText: "#{parent.displayName} has requested to add you to her seven sitters. Please review."
-      parameters: {invitationId:invitation.id}
+      parameters: {invitationId:invitation.id, delay}
 
   # The sitter accepted an invitation to join the family's sitter list. Tell the parent (user).
   sitterAcceptedConnection: (user, {sitter}) ->

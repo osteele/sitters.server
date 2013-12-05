@@ -2,7 +2,7 @@
 
 # This file defines the worker processes that process client requests.
 #
-# It can be run standalone, and is also currently run as part of the web server.
+# It can be run standalone. The web server also includes it.
 
 # Set the process's title so it's easier to find in `ps`, # `top`, Activity Monitor, and so on.
 process.title = 'sitters.workers'
@@ -24,7 +24,7 @@ _(global).extend require('./lib/models')
 
 
 #
-# Configure Logging
+# Logging
 # --
 
 Winston = require 'winston'
@@ -32,7 +32,7 @@ logger = Winston.loggers.add 'workers', console:{colorize:true, label:'workers'}
 
 
 #
-# Rollbar integration
+# Rollbar
 # --
 
 if process.env.ROLLBAR_ACCESS_TOKEN
@@ -56,6 +56,7 @@ process.on 'uncaughtException', (err) ->
 
 APNS = require('./lib/apns')
 
+# Remove devices with invalid tokens.
 APNS.connection.on 'transmissionError', (errCode, notification, device) ->
   return unless errCode == 8 # invalid token
   token = device.token.toString('hex')
@@ -64,6 +65,8 @@ APNS.connection.on 'transmissionError', (errCode, notification, device) ->
     .then(-> logger.info "Deleted token=#{token}")
     .done()
 
+# Remove devices with invalid tokens.
+#
 # TODO race condition with database initialization
 APNS.feedback.on 'feedback', (devices) ->
   devices.forEach (item) ->
@@ -89,7 +92,7 @@ updateFirebaseFromDatabase().then (count) ->
 
 
 #
-# Request Handling
+# Handle requests
 # --
 
 
@@ -106,13 +109,13 @@ RequestFB.on 'child_added', (snapshot) ->
 
 jobs.process 'request', (job, done) ->
   processRequest(job.data.request)
-    .then(
-      -> done()
-      (err) ->
-        logger.error err
-        rollbar.handleError err
-        done err
-    ).done()
+  .then(
+    -> done()
+    (err) ->
+      logger.error err
+      rollbar.handleError err
+      done err
+  ).done()
 
 processRequest = (request) ->
   {userAuthId, requestType, parameters} = request
@@ -134,3 +137,17 @@ processRequest = (request) ->
   return promise
 
 RequestHandlers = require './lib/request-handlers'
+
+
+#
+# Create virtual clients for simulated sitters and run them in-process
+# --
+
+Client = require './lib/client'
+
+Sitter.findAll(where:{is_simulated:true})
+.then((sitters) ->
+  Q.all sitters.map (sitterProfile) ->
+    sitterProfile.getUser().then (user) ->
+      new Client(user).run()
+).done()
