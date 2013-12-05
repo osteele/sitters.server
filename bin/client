@@ -29,6 +29,7 @@ Defaults = {
   card                : {cardType:'Visa', cvc:'123', exp_month:12, exp_year:2015, number:'4242424242424242'}
   deviceApnsToken     : '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
   deviceUuid          : '68753A44-4D6F-1226-9C60-0050E4C00067'
+  invitationId        : 0
   sitterCount         : 2
   sitterId            : 3
   sitterResponseDelay : 0
@@ -44,7 +45,11 @@ authenticateAsUser = (userAuthId) ->
   firebase.authenticateAs {provider, id}
 
 RequestTypeGenerators =
-  addSitter: -> {delay:Defaults.sitterResponseDelay, sitterId:Defaults.sitterId}
+  addSitter: ->
+    {delay:Defaults.sitterResponseDelay, sitterId:Defaults.sitterId}
+
+  acceptInvitation: ->
+    {invitationId:Defaults.invitationId}
 
   registerDeviceToken: ->
     {token:Defaults.deviceApnsToken, deviceUuid:Defaults.deviceUuid}
@@ -72,28 +77,27 @@ RequestTypeGenerators =
 
   simulateServerError: -> {}
 
-mergeCommandLineParameters = (parameters) ->
-  for key, value of parameters
-    optionName = _(key).underscored()
-    optionValue = argv[optionName]
-    if optionValue?
-      optionValue = Number(optionValue) if value instanceof Number
-      parameters[key] = optionValue
+mergeCommandLineOptions = (parameters, source) ->
+  for key, current of parameters
+    value = source[key] ? source[_(key).underscored()] ? source[_(key).dasherize()]
+    if value?
+      value = Number(value) if current instanceof Number
+      parameters[key] = value
   return parameters
 
-sendRequest = (requestType, printMessage=argv['verbose']) ->
+sendRequestP = (requestType, options=argv, printMessage=argv['verbose']) ->
   parameters = RequestTypeGenerators[requestType].call(mode:'run')
   Q.resolve(parameters).then (parameters) ->
-    request = {
+    parameters = mergeCommandLineOptions(parameters, options)
+    request =
       requestType : requestType
       apiVersion  : Defaults.apiVersion
       deviceUuid  : Defaults.deviceUuid
-      parameters  : mergeCommandLineParameters(parameters)
+      parameters  : parameters
       timestamp   : new Date().toISOString()
       userAuthId  : Defaults.userAuthId
-    }
     if printMessage
-      console.info 'Message:'
+      console.info 'Sending request:'
       console.info yaml.dump(request).replace(/(^|\n)/g, '$1  ')
     deferred = Q.defer()
     requestFb = firebase.RequestFB.push request, (err) ->
@@ -102,7 +106,7 @@ sendRequest = (requestType, printMessage=argv['verbose']) ->
     return deferred.promise
 
 usage = ->
-  programName =  'client'
+  programName = 'client'
   console.error "Usage: #{programName} -h "
   console.error "       #{programName} [OPTIONS]"
   console.error "       #{programName} COMMAND [OPTIONS]"
@@ -121,24 +125,30 @@ printMessages = ->
     key = snapshot.name()
     message = snapshot.val()
     printMessage message
+    Defaults.invitationId = message.parameters.invitationId if message.parameters.invitationId?
     userMessageFB.child(key).remove()
 
 cli = ->
   requestNames = {}
   _.keys(RequestTypeGenerators).forEach (name, i) -> requestNames[i + 1] = name
-  console.info "Select a request:"
-  _.map requestNames, (value, key) -> console.info "[#{key}] #{value}"
+  _.forEach requestNames, (value, key) -> console.info "[#{key}] #{value}"
   console.info '[q] quit'
-  read prompt:'? ', (err, input) ->
+  read prompt:'Request? ', (err, input) ->
+    process.exit() unless input? # ^C
     process.exit() if input.match(/^q$/i)
     console.info "\n"
-    requestType = requestNames[input]
+    requestType = requestNames[input.split(/\s/)[0]]
     if requestType
-      console.info "Sending request: #{requestType}"
-      sendRequest(requestType, true).done ->
-        # wait so that if there's a message it shows up before the prompt
+      options = {}
+      (input.split(/\s+/, 2)[1] || '').split(/\s+/).forEach (option) ->
+        [name, value] = option.split('=', 2)
+        name = name.replace(/^--?/, '')
+        options[name] = value
+      sendRequestP(requestType, options, true).done ->
+        # delay, so that if there's a message it shows up before the prompt
         Q.delay(500).then ->
-          console.info ''; cli()
+          console.info ''
+          cli()
     else
       console.error "Unknown command: #{input}"
       cli()
@@ -165,7 +175,7 @@ die = (msg) ->
 
 overrideDefaults = ->
   if userId = argv['user-id']
-    User.find(where:{id:userId}).then (user) ->
+    User.find(userId).then (user) ->
       die "No user ##{userId}" unless user
       console.info "Simulating user ##{userId} <#{user.email}>"
       Defaults.userName = user.displayName

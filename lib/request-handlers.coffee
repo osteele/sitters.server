@@ -6,7 +6,10 @@ require('dotenv').load()
 _ = require 'underscore'
 Q = require 'q'
 
+# Stripe handles payment card storage and payment processing.
 stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
+
+# Import the database models.
 _(global).extend require('./models')
 
 
@@ -14,7 +17,10 @@ _(global).extend require('./models')
 # Constants
 # --
 
+# How many seconds should a simulated sitter wait before responding to an invitation?
 DefaultSitterConfirmationDelay = process.env.DEFAULT_SITTER_CONFIRMATION_DELAY || 20
+
+# Maximum number of sitters attached to a family.
 MaxSitterCount = 7
 
 
@@ -27,34 +33,56 @@ logger = Winston.loggers.add 'requests', console:{colorize:true, label:'requests
 
 
 #
-# Request types
+# Request Handlers
 # --
 
 SendClientMessage = require './messages'
 
 module.exports =
+  #
+  # ### Add Sitter Invitation Flow
+  #
+  # * Parent -> server `addSitter` with sitter profile id
+  # * Server creates record `Invitation(parentAddSitter)`
+  # * Server -> sitter `inviteSitterToFamily` with parent id, invitiation id
+  # * Sitter -> Server `acceptInvitation` with invitation id
+  # * Server updates invitation.status = 'accepted'
+  # * Server -> parent sitterAcceptedConnection -> with sitter profile id
+
+  # #### Parent invites sitter
+  #
   # The parent sends this to invite a sitter who is already in the system to join the parent's family sitters. `delay`
   # is used for development and debugging; it sets the amount of time that one of the simulated sitters will wait before
   # responding.
-  addSitter: ({user}, {sitterId, delay}) ->
-    delay ?= DefaultSitterConfirmationDelay
-    sitter = null
-    logger.info "Waiting #{delay}s" if delay > 0
-    Q.delay(delay * 1000)
-    .then(-> Sitter.find(sitterId))
-    .then((sitter_) ->
-      sitter = sitter_
-      logger.error "Unknown sitter ##{sitterId}" unless sitter
-      return unless sitter
-      updateUserSitterListP user, (sitter_ids) ->
-        logger.info "Adding sitter", sitterId, "to", sitter_ids
-        return if sitterId in sitter_ids
-        return sitter_ids.concat([sitterId])
-    ).then((modified) ->
-      logger.info "Sitter was already added" unless modified
-      return unless modified
-      SendClientMessage.sitterAcceptedConnection user, {sitter}
-    )
+  addSitter: ({user:parent}, {sitterId, delay}) ->
+    # TODO return if the sitter is already on the list
+    invitationAttributes =
+      type         : 'parentAddSitter'
+      initiator_id : parent.id
+      recipient_id : sitterId
+    Invitation.findOrCreate(invitationAttributes).then (invitation) ->
+      return if invitation.status == 'sent'
+      Sitter.find(sitterId)
+      .then((sitter) -> sitter.getUser())
+      .then((sitter) -> SendClientMessage.inviteSitterToFamily sitter, {invitation, parent})
+      .then(-> invitation.updateAttributes status:'sent')
+
+  # #### Sitter accepts invitation
+  #
+  acceptInvitation: ({user:sitter}, {invitationId}) ->
+    Invitation.find(invitationId).then (invitation) ->
+      return unless invitation.status == 'sent'
+      # invitation.getInitiator().then (parent) ->
+      User.find(invitation.initiator_id).then (parent) ->
+        Q.all [
+          invitation.updateAttributes status:'accepted'
+          updateUserSitterListP parent, (sitterIds) ->
+            logger.info "Adding sitter", sitter.id, "to", sitterIds
+            return if sitter.id in sitterIds
+            return sitterIds.concat([sitter.id])
+          sitter.getSitter().then (sitter) ->
+            SendClientMessage.sitterAcceptedConnection parent, {sitter}
+        ]
 
   # The client sends this when the user signs in, and on each launch if the user is already signed in. The server
   # creates or updates a Device record and associates it with the user, for use with mobile notifications.
@@ -136,6 +164,10 @@ module.exports =
       return unless sitter
       SendClientMessage.sitterConfirmedReservation user, {sitter, startTime, endTime}
     )
+
+  #
+  # ### Development and Debugging Requests
+  #
 
   # This message is used for testing. It changes the number of sitters associated with the user's family, filling them
   # in as needed from the simulated sitters.

@@ -45,23 +45,29 @@ firebase.authenticateAs {}, {admin:true}
 sendMessageTo = (user, message) ->
   logger.info "Send -> user ##{user.id}:", message
 
-  payload = _.extend {}, message,
-    timestamp: new Date().toISOString()
-    apiVersion: API_VERSION
+  firebaseMessage = _.extend {}, message,
+    apiVersion : API_VERSION
+    timestamp  : new Date().toISOString()
   user.getAccounts().then (accounts) ->
-    console.log 'account', accounts.length
     accounts.forEach (account) ->
-      messageId = MessageFB.child(account.accountKey).push(payload).name()
+      fb = MessageFB.child(account.firebaseKey).push(firebaseMessage)
+      logger.info "message -> #{account.firebaseKey}/#{fb.name()}"
 
   payload = _.extend {}, message
   delete payload.messageText
   user.getDevices().then (devices) ->
-    console.log 'device', devices.length
     devices.forEach ({token}) ->
       if token
         APNS.pushMessageTo token, alert:message.messageText, payload:payload
 
 module.exports =
+  inviteSitterToFamily: (sitter, {invitation, parent}) ->
+    sendMessageTo sitter,
+      messageType: 'inviteSitterToFamily'
+      messageTitle: 'Sitter Request'
+      messageText: "#{parent.displayName} has requested to add you to her seven sitters. Please review."
+      parameters: {invitationId:invitation.id}
+
   # The sitter accepted an invitation to join the family's sitter list. Tell the parent (user).
   sitterAcceptedConnection: (user, {sitter}) ->
     sendMessageTo user,

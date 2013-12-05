@@ -17,18 +17,22 @@ createSittersP = Q.all sitters.map (sitterData) ->
     sitter.updateAttributes(data:sitterData, is_simulated:true)
   .then (sitter) -> sitter.getUser()
   .then (user) ->
-    user or User.create().then (user) -> user.setSitter(sitter)
-  .then (user) ->
-    phone = "415 555-000#{sitterId}"
-    user.updateAttributes {phone, is_simulated:true}
-    # user.getSitter().then (x) -> console.log x
-
-
-        # defined:
-        # console.log user.setSitter
-
-    # User.findOrCreate(sitter_id:sitterId).then (user) ->
-  # ]
+    Q.when(user or User.create().then (user) -> user.setSitter(sitter))
+    .then (user) ->
+      userAttributes =
+        displayName: sitterData.name
+        email: "sitter-#{sitterId}@sevensitters.com"
+        phone: "415 555-000#{sitterId}"
+      Q.all [
+        user.updateAttributes userAttributes
+        user.getAccounts()
+        .then (accounts) ->
+          accountAttributes =
+            user_id          : user.id
+            provider_name    : 'facebook'
+            provider_user_id : String(172347878787877 + sitterId)
+          accounts.length or Account.create(accountAttributes)
+        ]
 
 createSittersP
   .catch( (error) -> console.error error )

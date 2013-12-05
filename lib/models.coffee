@@ -46,19 +46,28 @@ sequelize.execute = (string, parameters={}) ->
 # In the future, a User may have several Accounts, if they connect to multiple providers
 # or create an email account and then connect it.
 Account = sequelize.define 'accounts',
-  provider_name: {type: Sequelize.STRING, index: true}
-  provider_user_id: {type: Sequelize.STRING, index: true}
+  provider_name: {type:Sequelize.STRING(20), index:true, allowNull:false}
+  provider_user_id: {type:Sequelize.STRING(64), index:true, allowNull:false}
 ,
   getterMethods:
     authKey: -> [@.provider_name, @.provider_user_id].join('-')
     firebaseKey: -> [@.provider_name, @.provider_user_id].join('-')
 
 Device = sequelize.define 'devices',
+  # `token` is the APNS token
   token: {type: Sequelize.STRING(64), index:true, unique:true}
+  # `uuid` is the vendor UUID, and is used as the natural key, even though there
+  # is also an `id` for foreign references and in case this changes.
   uuid: {type:Sequelize.STRING(36), index:true, unique:true}
 
 Family = sequelize.define 'families',
   sitter_ids: Sequelize.ARRAY(Sequelize.INTEGER)
+
+Invitation = sequelize.define 'invitations',
+  # one of: 'parentInvitesSitterToFamily'
+  type: {type:Sequelize.STRING(40), index:true, allowNull:false}
+  # one of 'open' | 'accepted' | 'declined'
+  status: {type:Sequelize.STRING(10), index:true}
 
 PaymentCustomer = sequelize.define 'payment_customers',
   stripe_customer_id: Sequelize.STRING
@@ -80,23 +89,40 @@ Sitter = sequelize.define 'sitters',
 
 User = sequelize.define 'users',
   displayName: Sequelize.STRING
-  email: {type: Sequelize.STRING, index: true, unique: true}
-  phone: {type: Sequelize.STRING(15), index: true, unique: true}
+  # For now, each user has a single email and phone. Move these to an association if this changes.
+  email: {type:Sequelize.STRING, index:true, unique:true}
+  phone: {type:Sequelize.STRING(15), index:true, unique:true}
 
 
 #
-# Module Associations
+# Associations
 # --
 
-Account.belongsTo User
-Family.hasMany User
-PaymentCustomer.belongsTo User
-Sitter.belongsTo User
-User.hasMany Account
-User.hasMany Device
-User.belongsTo Family
-User.hasOne PaymentCustomer
-User.hasOne Sitter
+Account
+  .belongsTo(User)
+
+Family
+  .hasMany(User)
+
+# Invitation
+#   .belongsTo(User, as:'Initiator', foreignKey:'initiator_id')
+#   .belongsTo(User, as:'Recipient', foreignKey:'recipient_id')
+
+PaymentCustomer
+  .belongsTo(User)
+
+Sitter
+  .belongsTo(User)
+
+User
+  .hasMany(Account)
+  .hasMany(Device)
+  .hasMany(Invitation, as:'Initiator', foreignKey:'initiator_id')
+  .hasMany(Invitation, as:'Recipient', foreignKey:'recipient_id')
+  .belongsTo(Family)
+  .hasOne(PaymentCustomer)
+  .hasOne(Sitter)
+
 
 #
 # Custom Finders
@@ -141,6 +167,7 @@ module.exports = _.extend exports, {
   Account
   Device
   Family
+  Invitation
   PaymentCustomer
   Sitter
   User
