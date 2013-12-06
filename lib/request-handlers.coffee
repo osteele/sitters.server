@@ -54,18 +54,18 @@ module.exports =
   # The parent sends this to invite a sitter who is already in the system to join the parent's family sitters. `delay`
   # is used for development and debugging; it sets the amount of time that one of the simulated sitters will wait before
   # responding.
-  addSitter: ({user:parent}, {sitterId, delay}) ->
+  addSitter: ({user:parent}, {sitterId:sitterProfileId, delay}) ->
     # TODO return if the sitter is already on the list
     invitationAttributes =
       type         : 'parentAddSitter'
       initiator_id : parent.id
-      recipient_id : sitterId
+      recipient_id : sitterProfileId
     Invitation.findOrCreate(invitationAttributes).then (invitation) ->
       console.info "Created invitation ##{invitation.id}" unless invitation.status
       if invitation.status == 'sent'
         console.info "Already sent invitation ##{invitation.id}"
         return
-      Sitter.find(sitterId)
+      SitterProfile.find(sitterProfileId)
       .then((sitter) -> sitter.getUser())
       .then((sitter) -> SendClientMessage.inviteSitterToFamily sitter, {invitation, parent, delay})
       .then(-> invitation.updateAttributes status:'sent')
@@ -79,23 +79,24 @@ module.exports =
       User.find(invitation.initiator_id).then (parent) ->
         Q.all [
           invitation.updateAttributes status:'accepted'
-          updateUserSitterListP parent, (sitterIds) ->
-            logger.info "Adding sitter", sitter.id, "to", sitterIds
-            return if sitter.id in sitterIds
-            return sitterIds.concat([sitter.id])
-          sitter.getSitter().then (sitter) ->
-            SendClientMessage.sitterAcceptedConnection parent, {sitter}
+          sitter.getSitterProfile().then (sitterProfile) ->
+            updateUserSitterListP parent, (sitterProfileIds) ->
+              logger.info "Adding sitter", sitterProfile.id, "to", sitterProfileIds
+              return if sitterProfile.id in sitterProfileIds
+              return sitterProfileIds.concat([sitterProfile.id])
+          sitter.getSitterProfile().then (sitterProfile) ->
+            SendClientMessage.sitterAcceptedConnection parent, {sitterProfile}
         ]
 
   # The client sends this when the user signs in, and on each launch if the user is already signed in. The server
   # creates or updates a Device record and associates it with the user, for use with mobile notifications.
   registerDeviceToken: ({user}, {deviceUuid:uuid, token}) ->
     user_id = user.id
-    deviceP = Device.find(where:{uuid})
+    Device.find(where:{uuid})
     .then (device) ->
       logger.info "Register device #{uuid} for user ##{user.id}"
-      return if device?.user_id == user_id and device.token == token
       if device
+        return if device.user_id == user_id and device.token == token
         logger.info "Update device ##{device.id}"
         device.updateAttributes {token, user_id}
       else
@@ -155,17 +156,17 @@ module.exports =
   # The client sends this when the user requests a specific sitter for a specific time.
   # `delay` is used for development and debugging; it sets the amount of time that one
   # of the simulated sitters will wait before responding.
-  reserveSitter: ({user}, {sitterId, startTime, endTime, delay}) ->
+  reserveSitter: ({user}, {sitterId:sitterProfileId, startTime, endTime, delay}) ->
     delay ?= DefaultSitterConfirmationDelay
     startTime = new Date(startTime)
     endTime = new Date(endTime)
     logger.info "Waiting #{delay}s" if delay > 0
     Q.delay(delay * 1000).then(->
-      Sitter.find(sitterId)
-    ).then((sitter) ->
-      logger.error "Unknown sitter ##{sitterId}" unless sitter
-      return unless sitter
-      SendClientMessage.sitterConfirmedReservation user, {sitter, startTime, endTime}
+      SitterProfile.find(sitterProfileId)
+    ).then((sitterProfile) ->
+      logger.error "Unknown sitterProfile ##{sitterProfileId}" unless sitterProfile
+      return unless sitterProfile
+      SendClientMessage.sitterConfirmedReservation user, {sitterProfile, startTime, endTime}
     )
 
   #

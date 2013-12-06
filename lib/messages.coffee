@@ -69,19 +69,19 @@ module.exports =
       parameters: {invitationId:invitation.id, delay}
 
   # The sitter accepted an invitation to join the family's sitter list. Tell the parent (user).
-  sitterAcceptedConnection: (user, {sitter}) ->
+  sitterAcceptedConnection: (user, {sitterProfile}) ->
     sendMessageTo user,
       messageType: 'sitterAcceptedConnection'
       messageTitle: 'Sitter Confirmed'
-      messageText: "#{sitter.firstName} has accepted your request. We’ve added her to your Seven Sitters."
-      parameters: {sitterId:sitter.id}
+      messageText: "#{sitterProfile.firstName} has accepted your request. We’ve added her to your Seven Sitters."
+      parameters: {sitterId:sitterProfile.id}
 
   # The sitter accepted a booking. Tell the parent (user).
-  sitterConfirmedReservation: (user, {sitter, startTime, endTime}) ->
+  sitterConfirmedReservation: (user, {sitterProfile, startTime, endTime}) ->
     sendMessageTo user,
       messageType: 'sitterConfirmedReservation'
       messageTitle: 'Sitter Confirmed'
-      messageText: "#{sitter.firstName} has confirmed your request."
-      parameters: {sitterId:sitter.id, startTime:startTime.toISOString(), endTime:endTime.toISOString()}
+      messageText: "#{sitterProfile.firstName} has confirmed your request."
+      parameters: {sitterId:sitterProfile.id, startTime:startTime.toISOString(), endTime:endTime.toISOString()}
 
 

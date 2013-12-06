@@ -77,7 +77,7 @@ PaymentCustomer = sequelize.define 'payment_customers',
     set: (data) -> @setDataValue 'card_info', JSON.stringify(data)
 
 # The sitter is really sitter profile information, and is associated to a User.
-Sitter = sequelize.define 'sitters',
+SitterProfile = sequelize.define 'sitter_profiles',
   data:
     type: Sequelize.TEXT
     get: -> JSON.parse(JSON.parse(@getDataValue('data')))
@@ -111,7 +111,7 @@ Family
 PaymentCustomer
   .belongsTo(User)
 
-Sitter
+SitterProfile
   .belongsTo(User)
 
 User
@@ -121,7 +121,7 @@ User
   .hasMany(Invitation, as:'Recipient', foreignKey:'recipient_id')
   .belongsTo(Family)
   .hasOne(PaymentCustomer)
-  .hasOne(Sitter)
+  .hasOne(SitterProfile)
 
 
 #
@@ -169,7 +169,7 @@ module.exports = _.extend exports, {
   Family
   Invitation
   PaymentCustomer
-  Sitter
+  SitterProfile
   User
 
   # Finders

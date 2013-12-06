@@ -145,9 +145,9 @@ RequestHandlers = require './lib/request-handlers'
 
 Client = require './lib/client'
 
-Sitter.findAll(where:{is_simulated:true})
-.then((sitters) ->
-  Q.all sitters.map (sitterProfile) ->
+SitterProfile.findAll(where:{is_simulated:true})
+.then((sitterProfiles) ->
+  Q.all sitterProfiles.map (sitterProfile) ->
     sitterProfile.getUser().then (user) ->
       new Client(user).run()
 ).done()

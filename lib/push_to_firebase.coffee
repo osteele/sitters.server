@@ -9,9 +9,11 @@ _(global).extend require('../lib/firebase')
 winston = require 'winston'
 logger = winston.loggers.add 'firebase-push', console: {colorize: true, label: '→firebase'}
 
+# Database models that are synced to Firebase.
+SyncedModels = [Account, Family, PaymentCustomer, SitterProfile, User]
+
 ModelClassesByName = {}.tap (dict) ->
-  models = [Account, Family, PaymentCustomer, Sitter, User]
-  models.forEach (model) =>
+  SyncedModels.forEach (model) =>
     this[model.tableName] = model
 
 getUserFB = (account) ->
@@ -30,18 +32,18 @@ UpdateFunctions =
 
   payment_customers: (paymentCustomer) ->
     paymentCustomer.getUser().then((user) ->
-      logger.info "→ User ##{user?.id}"
+      logger.info "Update user ##{user?.id}"
       user.getAccounts()
     ).then((accounts) ->
       Q.all accounts.map (account) ->
-        logger.info "→ Account ##{account.id}"
+        logger.info "Update account ##{account.id}"
         fbSetP getUserFB(account).child('cardInfo'), paymentCustomer.card_info
     )
 
-  sitters: (sitter) ->
-    fb = SitterFB.child(sitter.id)
-    data = _.extend {id:String(sitter.id)}, sitter.data
-    fbSetP fb, data
+  sitter_profiles: (sitterProfile) ->
+    fb = SitterFB.child(sitterProfile.id)
+    profileData = _.extend {id:String(sitterProfile.id)}, sitterProfile.data
+    fbSetP fb, profileData
 
   users: (user) ->
     user.getAccounts().then (accounts) ->

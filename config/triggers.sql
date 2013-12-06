@@ -42,10 +42,10 @@ AFTER INSERT OR UPDATE OR DELETE
 ON families
   FOR EACH ROW EXECUTE PROCEDURE log_row_change();
 
-DROP TRIGGER IF EXISTS log_row_change ON sitters;
+DROP TRIGGER IF EXISTS log_row_change ON sitter_profiles;
 CREATE TRIGGER log_row_change
 AFTER INSERT OR UPDATE OR DELETE
-ON sitters
+ON sitter_profiles
   FOR EACH ROW EXECUTE PROCEDURE log_row_change();
 
 DROP TRIGGER IF EXISTS log_row_change ON users;
