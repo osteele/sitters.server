@@ -17,9 +17,6 @@ _(global).extend require('./models')
 # Constants
 # --
 
-# How many seconds should a simulated sitter wait before responding to an invitation?
-DefaultSitterConfirmationDelay = process.env.DEFAULT_SITTER_CONFIRMATION_DELAY || 20
-
 # Maximum number of sitters attached to a family.
 MaxSitterCount = 7
 
@@ -38,6 +35,21 @@ logger = Winston.loggers.add 'requests', console:{colorize:true, label:'requests
 
 SendClientMessage = require './messages'
 
+inviteP = ({initiator, recipient, invitationType, messageType, messageParameters}) ->
+  messageType ?= invitationType
+  invitationAttributes =
+    type         : invitationType
+    initiator_id : initiator.id
+    recipient_id : recipient.id
+  Invitation.findOrCreate(invitationAttributes).then (invitation) ->
+    console.info "Created invitation ##{invitation.id}" unless invitation.status
+    if invitation.status == 'sent'
+      console.info "Already sent invitation ##{invitation.id}"
+      return
+    messageParameters = _.extend {initiator, invitation}, messageParameters
+    SendClientMessage[invitationType](recipient, messageParameters)
+    .then(-> invitation.updateAttributes status:'sent')
+
 module.exports =
   #
   # ### Add Sitter Invitation Flow
@@ -54,25 +66,21 @@ module.exports =
   # The parent sends this to invite a sitter who is already in the system to join the parent's family sitters. `delay`
   # is used for development and debugging; it sets the amount of time that one of the simulated sitters will wait before
   # responding.
-  addSitter: ({user:parent}, {sitterId:sitterProfileId, delay}) ->
+  addSitter: ({user:parent}, {sitterId:sitterProfileId, delay:simulatedDelay}) ->
     # TODO return if the sitter is already on the list
-    invitationAttributes =
-      type         : 'parentAddSitter'
-      initiator_id : parent.id
-      recipient_id : sitterProfileId
-    Invitation.findOrCreate(invitationAttributes).then (invitation) ->
-      console.info "Created invitation ##{invitation.id}" unless invitation.status
-      if invitation.status == 'sent'
-        console.info "Already sent invitation ##{invitation.id}"
-        return
-      SitterProfile.find(sitterProfileId)
-      .then((sitter) -> sitter.getUser())
-      .then((sitter) -> SendClientMessage.inviteSitterToFamily sitter, {invitation, parent, delay})
-      .then(-> invitation.updateAttributes status:'sent')
+    SitterProfile.find(sitterProfileId)
+    .then((sitterProfile) -> sitterProfile.getUser())
+    .then (sitter) ->
+      inviteP
+        invitationType    : 'inviteSitterToFamily'
+        initiator         : parent
+        recipient         : sitter
+        messageType       : 'parentAddSitter'
+        messageParameters : {parent, simulatedDelay}
 
   # #### Sitter accepts invitation
   #
-  acceptInvitation: ({user:sitter}, {invitationId}) ->
+  acceptInvitation: ({user:sitter}, {invitationId, startTime, endTime}) ->
     Invitation.find(invitationId).then (invitation) ->
       return unless invitation?.status == 'sent'
       # invitation.getInitiator().then (parent) ->
@@ -85,7 +93,11 @@ module.exports =
               return if sitterProfile.id in sitterProfileIds
               return sitterProfileIds.concat([sitterProfile.id])
           sitter.getSitterProfile().then (sitterProfile) ->
-            SendClientMessage.sitterAcceptedConnection parent, {sitterProfile}
+            message = {
+              inviteSitterToFamily : 'sitterAcceptedConnection'
+              reserveSitterForTime : 'sitterConfirmedReservation'
+            }[invitation.type] || throw new Exception("Unknown invitation type #{invitation.type}")
+            SendClientMessage[message] parent, {sitterProfile, startTime, endTime}
         ]
 
   # The client sends this when the user signs in, and on each launch if the user is already signed in. The server
@@ -156,18 +168,16 @@ module.exports =
   # The client sends this when the user requests a specific sitter for a specific time.
   # `delay` is used for development and debugging; it sets the amount of time that one
   # of the simulated sitters will wait before responding.
-  reserveSitter: ({user}, {sitterId:sitterProfileId, startTime, endTime, delay}) ->
-    delay ?= DefaultSitterConfirmationDelay
-    startTime = new Date(startTime)
-    endTime = new Date(endTime)
-    logger.info "Waiting #{delay}s" if delay > 0
-    Q.delay(delay * 1000).then(->
-      SitterProfile.find(sitterProfileId)
-    ).then((sitterProfile) ->
-      logger.error "Unknown sitterProfile ##{sitterProfileId}" unless sitterProfile
-      return unless sitterProfile
-      SendClientMessage.sitterConfirmedReservation user, {sitterProfile, startTime, endTime}
-    )
+  reserveSitter: ({user:parent}, {sitterId:sitterProfileId, startTime, endTime, delay:simulatedDelay}) ->
+    SitterProfile.find(sitterProfileId)
+    .then((sitterProfile) -> sitterProfile.getUser())
+    .then (sitter) ->
+      inviteP
+        invitationType    : 'reserveSitterForTime'
+        initiator         : parent
+        recipient         : sitter
+        messageParameters : {startTime, endTime, simulatedDelay}
+
 
   #
   # ### Development and Debugging Requests

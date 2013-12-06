@@ -48,10 +48,11 @@ sendMessageTo = (user, message) ->
   firebaseMessage = _.extend {}, message,
     apiVersion : API_VERSION
     timestamp  : new Date().toISOString()
-  user.getAccounts().then (accounts) ->
+  user.getAccounts().then((accounts) ->
     accounts.forEach (account) ->
       fb = MessageFB.child(account.firebaseKey).push(firebaseMessage)
       logger.info "message -> #{account.firebaseKey}/#{fb.name()}"
+  ).done()
 
   payload = _.extend {}, message
   delete payload.messageText
@@ -61,12 +62,21 @@ sendMessageTo = (user, message) ->
         APNS.pushMessageTo token, alert:message.messageText, payload:payload
 
 module.exports =
-  inviteSitterToFamily: (sitter, {invitation, parent, delay}) ->
+  inviteSitterToFamily: (sitter, {invitation, initiator:parent, simulatedDelay}) ->
+    simulatedDelay ?= null
     sendMessageTo sitter,
       messageType: 'inviteSitterToFamily'
       messageTitle: 'Sitter Request'
       messageText: "#{parent.displayName} has requested to add you to her seven sitters. Please review."
-      parameters: {invitationId:invitation.id, delay}
+      parameters: {invitationId:invitation.id, simulatedDelay}
+
+  reserveSitterForTime: (sitter, {invitation, initiator:parent, simulatedDelay, startTime, endTime}) ->
+    simulatedDelay ?= null
+    sendMessageTo sitter,
+      messageType: 'reserveSitterForTime'
+      messageTitle: 'Sitter Request'
+      messageText: "#{parent.displayName} has requested that you sit from #{startTime} to #{endTime}. Please review."
+      parameters: {invitationId:invitation.id, simulatedDelay, startTime, endTime}
 
   # The sitter accepted an invitation to join the family's sitter list. Tell the parent (user).
   sitterAcceptedConnection: (user, {sitterProfile}) ->
@@ -82,6 +92,4 @@ module.exports =
       messageType: 'sitterConfirmedReservation'
       messageTitle: 'Sitter Confirmed'
       messageText: "#{sitterProfile.firstName} has confirmed your request."
-      parameters: {sitterId:sitterProfile.id, startTime:startTime.toISOString(), endTime:endTime.toISOString()}
-
-
+      parameters: {sitterId:sitterProfile.id, startTime, endTime}
