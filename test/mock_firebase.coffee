@@ -131,7 +131,12 @@ class DataSnapshot
 
   val: -> @value
 
+class MockFirebaseTokenGenerator
+  createToken: (data, options) ->
+
 Firebase.mock =
+  TokenGenerator: MockFirebaseTokenGenerator
+
   simulateServerSync: ->
     while callback = FirebaseState.onServerSync.shift()
       callback.onComplete.call(null, null)

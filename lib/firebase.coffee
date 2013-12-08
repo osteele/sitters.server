@@ -2,7 +2,7 @@
 
 Q = require 'q'
 Firebase = require('firebase')
-FirebaseTokenGenerator = require("firebase-token-generator")
+FirebaseTokenGenerator = require('firebase-token-generator')
 TokenGenerator = new FirebaseTokenGenerator(process.env.FIREBASE_SECRET)
 
 FirebaseRoot = new Firebase('https://sevensitters.firebaseIO.com/')

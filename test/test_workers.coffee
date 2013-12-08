@@ -4,13 +4,14 @@ _ = require 'underscore'
 should = require 'should'
 sinon = require 'sinon'
 
-Firebase = require './mock_firebase'
-messageBus = require './mock_message_bus'
+mockFirebase = require './mock_firebase'
+mockMessageBus = require './mock_message_bus'
 
 require('./mock_requires')
-  firebase: Firebase
-  './message_bus': messageBus
-  './lib/message_bus': messageBus
+  firebase: mockFirebase
+  'firebase-token-generator': mockFirebase.mock.TokenGenerator
+  './message_bus': mockMessageBus
+  './lib/message_bus': mockMessageBus
   rollbar:
     init: ->
     reportMessage: ->
@@ -30,7 +31,7 @@ createClientP = (userId) ->
 # Keep processing messages until they're done. Wait 100ms for database connections to clear.
 # TODO call every 10ms with a timeout of 100ms since the last message
 processMessagesP = ->
-  messageBus.mock.process() and Q.delay(100).then(-> processMessagesP())
+  mockMessageBus.mock.process() and Q.delay(100).then(-> processMessagesP())
 
 it 'should round trip an add sitter invitation', (done) ->
   sequelize.execute("DELETE FROM change_log")
