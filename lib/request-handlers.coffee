@@ -42,9 +42,9 @@ inviteP = ({initiator, recipient, invitationType, messageType, messageParameters
     initiator_id : initiator.id
     recipient_id : recipient.id
   Invitation.findOrCreate(invitationAttributes).then (invitation) ->
-    console.info "Created invitation ##{invitation.id}" unless invitation.status
+    logger.info "Created invitation ##{invitation.id}" unless invitation.status
     if invitation.status == 'sent'
-      console.info "Already sent invitation ##{invitation.id}"
+      logger.info "Already sent invitation ##{invitation.id}"
       return
     messageParameters = _.extend {initiator, invitation}, messageParameters
     SendClientMessage[invitationType](recipient, messageParameters)
