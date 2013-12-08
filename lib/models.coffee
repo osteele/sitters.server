@@ -10,7 +10,7 @@ Q = require 'q'
 # --
 
 winston = require 'winston'
-if process.env.NODE_ENV == 'production'
+if process.env.NODE_ENV == 'production' or process.env.CI
   # In production, log sql to stdout so that it's routed to consolidated logging
   loggerOptions = {console:{colorize:true, label:'sql'}}
 else
