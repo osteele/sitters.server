@@ -1,9 +1,12 @@
-# Setting up a Development Environment
+# Build Status
 
+![](https://www.codeship.io/projects/68120b20-426a-0131-2e69-0aefc5d00e69/status?branch=master)
+
+# Setting up a Development Environment
 
 Install [Homebrew](http://brew.sh).
 
-Install dependencies (MacOS):
+Install dependencies (Mac OS X):
 
     brew install git node postgresql redis
     npm install
@@ -20,7 +23,7 @@ Copy `.env.template` to `.env` and fill in the values:
     $EDITOR .env
     # fill in value for FIREBASE_SECRET
 
-Create the database and initialize it.
+Create and initialize the database.
 
     npm run initialize-database
 
