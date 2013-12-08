@@ -33,7 +33,9 @@ processMessagesP = ->
   messageBus.mock.process() and Q.delay(100).then(-> processMessagesP())
 
 it 'should round trip an add sitter invitation', (done) ->
-  sequelize.execute("DELETE FROM invitations").then(->
+  sequelize.execute("DELETE FROM change_log")
+  .then(-> sequelize.execute("DELETE FROM invitations"))
+  .then(->
     createClientP(1).then (client) ->
       client.sendRequestP 'addSitter', sitterId:3, delay:0
   ).then(-> processMessagesP()

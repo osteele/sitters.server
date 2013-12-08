@@ -14,28 +14,27 @@ updateSittersP = Q.all SitterProfileData.map (sitterData) ->
   profileData = _.extend {}, sitterData
   delete profileData.id
 
+  userAttributes =
+    displayName: profileData.name
+    email: "sitter-#{sitterProfileId}@sevensitters.com"
+    phone: "415 555-000#{sitterProfileId}"
+
   console.info 'Updating', sitterProfileId, profileData.name
-  SitterProfile.findOrCreate(id:sitterProfileId)
-  .then (sitterProfile) ->
-    sitterProfile.updateAttributes(data:profileData, is_simulated:true)
-  .then (sitterProfile) -> sitterProfile.getUser()
-  .then (user) ->
-    Q.when(user or User.create().then (user) -> user.setSitter(sitterProfile))
-    .then (user) ->
-      userAttributes =
-        displayName: profileData.name
-        email: "sitter-#{sitterProfileId}@sevensitters.com"
-        phone: "415 555-000#{sitterProfileId}"
-      Q.all [
-        user.updateAttributes userAttributes
-        user.getAccounts()
-        .then (accounts) ->
-          accountAttributes =
-            user_id          : user.id
-            provider_name    : 'facebook'
-            provider_user_id : String(172347878787877 + sitterProfileId)
-          accounts.length or Account.create(accountAttributes)
-        ]
+  SitterProfile.findOrCreate(id:sitterProfileId).then (sitterProfile) ->
+    sitterProfile.getUser().then (user) ->
+      Q.when(user or User.create()).then (user) ->
+        Q.all [
+          sitterProfile.updateAttributes data:profileData, is_simulated:true
+          user.setSitterProfile sitterProfile
+          user.updateAttributes userAttributes
+          user.getAccounts()
+          .then (accounts) ->
+            accountAttributes =
+              user_id          : user.id
+              provider_name    : 'facebook'
+              provider_user_id : String(172347878787877 + sitterProfileId)
+            accounts.length or Account.create(accountAttributes)
+          ]
 
 updateSittersP
   .catch((error) -> console.error error)

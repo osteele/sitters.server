@@ -1,8 +1,10 @@
 #!/usr/bin/env coffee
 
+argv = require('optimist').argv
+
 models = require '../lib/models'
 models.logger =
   (msg) ->
-    console.log msg.replace(/^Executing:\s*/, '')
+    console.log msg.replace(/^Executing:\s*/, '') if argv.verbose
 
-models.sequelize.sync()
+models.sequelize.sync(force:argv.force)

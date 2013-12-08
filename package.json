@@ -16,6 +16,7 @@
   "scripts": {
     "preinstall": "rm -rf node_modules/rollbar",
     "postinstall": "./bin/install-certificates",
+    "initialize-database": "./bin/initialize-database",
     "start": "foreman start",
     "server": "coffee server.coffee",
     "test": "mocha --compilers coffee:coffee-script"

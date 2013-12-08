@@ -22,11 +22,7 @@ Copy `.env.template` to `.env` and fill in the values:
 
 Create the database and initialize it.
 
-    psql -d postgres -c 'create database sitters'
-    psql -d postgres -c 'create user sitters'
-    ./bin/create-database-tables
-    ./bin/create-demo-sitters
-    ./bin/update-triggers
+    npm run initialize-database
 
 
 # Running
