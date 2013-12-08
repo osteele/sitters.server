@@ -41,6 +41,7 @@ if process.env.ROLLBAR_ACCESS_TOKEN
 else
   rollbar =
     reportMessage: ->
+    handleError: (err) -> throw err
 
 process.on 'uncaughtException', (err) ->
   console.error err.stack
@@ -81,7 +82,6 @@ APNS.feedback.on 'feedback', (devices) ->
 # --
 
 firebase = require './lib/firebase'
-_(global).extend firebase
 firebase.authenticateAs {}, {admin:true}
 
 updateFirebaseFromDatabase = require('./lib/push_to_firebase').updateAllP
@@ -95,17 +95,12 @@ updateFirebaseFromDatabase().then (count) ->
 # Handle requests
 # --
 
-
-logger.info "Polling #{RequestFB}"
-
 # The client pushes requests to Firebase, which handles auth.
 # Move them from Firebase to the job queue.
-RequestFB.on 'child_added', (snapshot) ->
-  key = snapshot.name()
-  request = snapshot.val()
+messageBus = require './lib/message_bus'
+messageBus.onRequest (request) ->
   title = "#{request.requestType} from #{request.userAuthId}"
   jobs.create('request', {request, title}).save()
-  RequestFB.child(key).remove()
 
 jobs.process 'request', (job, done) ->
   processRequest(job.data.request)
@@ -145,9 +140,11 @@ RequestHandlers = require './lib/request-handlers'
 
 Client = require './lib/client'
 
-SitterProfile.findAll(where:{is_simulated:true})
-.then((sitterProfiles) ->
-  Q.all sitterProfiles.map (sitterProfile) ->
-    sitterProfile.getUser().then (user) ->
-      new Client(user).run()
-).done()
+simulateSittersP =
+  SitterProfile.findAll(where:{is_simulated:true})
+  .then (sitterProfiles) ->
+    Q.all sitterProfiles.map (sitterProfile) ->
+      sitterProfile.getUser().then (user) ->
+        new Client(user).run()
+
+simulateSittersP.done()

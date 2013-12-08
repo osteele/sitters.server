@@ -28,12 +28,10 @@ logger = Winston.loggers.add 'messages', console:{colorize:true, label:'messages
 
 
 #
-# Firebase
+# Messages
 # --
 
-firebase = require './firebase'
-_(global).extend firebase
-firebase.authenticateAs {}, {admin:true}
+messageBus = require './message_bus'
 
 # Send a message to the client, via Firebase and APNS.
 #
@@ -45,13 +43,12 @@ firebase.authenticateAs {}, {admin:true}
 sendMessageTo = (user, message) ->
   logger.info "Send -> user ##{user.id}:", message
 
-  firebaseMessage = _.extend {}, message,
+  busMessage = _.extend {}, message,
     apiVersion : API_VERSION
     timestamp  : new Date().toISOString()
   user.getAccounts().then((accounts) ->
     accounts.forEach (account) ->
-      fb = MessageFB.child(account.firebaseKey).push(firebaseMessage)
-      logger.info "message -> #{account.firebaseKey}/#{fb.name()}"
+      messageBus.sendMessageToAccount account.authKey, busMessage
   ).done()
 
   payload = _.extend {}, message
