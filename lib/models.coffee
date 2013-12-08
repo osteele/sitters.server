@@ -10,8 +10,10 @@ Q = require 'q'
 # --
 
 winston = require 'winston'
+removeLoggedNewlines = false
 if process.env.NODE_ENV == 'production' or process.env.CI
   # In production, log sql to stdout so that it's routed to consolidated logging
+  removeLoggedNewlines = true
   loggerOptions = {console:{colorize:true, label:'sql'}}
 else
   # In development, route sql to a file so that it's out of the way but available via tail -f.
@@ -30,7 +32,10 @@ Sequelize = require('sequelize-postgres').sequelize
 sequelize = new Sequelize process.env.DATABASE_URL,
   dialect: 'postgres'
   define: {underscored:true}
-  logging: (msg) -> exports.logger msg
+  logging: (msg) ->
+    msg = msg.replace(/\n\s*/g, ' ') if removeLoggedNewlines
+    # msg = 'redact', msg
+    exports.logger msg
   omitNull: true
   pool: { maxConnections:5, maxIdleTime:30 }
 
