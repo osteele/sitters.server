@@ -4,10 +4,10 @@ _ = require 'underscore'
 should = require 'should'
 sinon = require 'sinon'
 
-mockFirebase = require './mock_firebase'
-mockMessageBus = require './mock_message_bus'
+mockFirebase = require './mocks/mock.firebase'
+mockMessageBus = require './mocks/mock.message_bus'
 
-require('./mock_requires')
+require('../lib/mock_requires')
   firebase: mockFirebase
   'firebase-token-generator': mockFirebase.mock.TokenGenerator
   './message_bus': mockMessageBus
@@ -17,7 +17,7 @@ require('./mock_requires')
     reportMessage: ->
     handleError: (err, cb) -> throw err
   stripe: -> {}
-  apn: require './mock_apn'
+  apn: require './mocks/mock.apn'
 
 models = require '../lib/models'
 workers = require '../workers'
