@@ -19,11 +19,11 @@ require('../lib/mock_requires')
   stripe: -> {}
   apn: require './mocks/mock.apn'
 
-models = require '../lib/models'
-workers = require '../workers'
+models = require '../app/lib/models'
+workers = require '../app/workers'
 {sequelize} = models
 
-Client = require '../lib/client'
+Client = require '../app/lib/client'
 createClientP = (userId) ->
   models.User.find(userId).then (user) ->
     new Client(user).run()

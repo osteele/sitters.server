@@ -8,7 +8,7 @@ Q = require 'q'
 argv = require('optimist').argv
 process.env.FIREBASE_ENVIRONMENT = 'production' if argv.production
 
-firebase = require '../lib/firebase'
+firebase = require '../app/integrations/firebase'
 {MessageFB} = firebase
 _(global).extend require('../lib/utils')
 

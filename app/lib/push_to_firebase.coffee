@@ -2,9 +2,9 @@
 
 Q = require 'q'
 _ = require 'underscore'
-require('../lib/utils')
-_(global).extend require('../lib/models')
-_(global).extend require('../lib/firebase')
+require '../../lib/utils'
+_(global).extend require('./models')
+_(global).extend require('../integrations/firebase')
 
 winston = require 'winston'
 logger = winston.loggers.add 'firebase-push', console: {colorize: true, label: '→firebase'}

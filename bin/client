@@ -15,8 +15,8 @@ argv = require('optimist').argv
 process.env.FIREBASE_ENVIRONMENT = 'production' if argv.production
 
 _(global).extend require('../lib/utils')
-{User} = require './../lib/models'
-firebase = require '../lib/firebase'
+{User} = require '../app/lib/models'
+firebase = require '../app/integrations/firebase'
 
 Date.prototype.setToBeginningOfHour = (hour) ->
   @setHours hour if hour?

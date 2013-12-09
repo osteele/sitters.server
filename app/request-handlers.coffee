@@ -10,7 +10,7 @@ Q = require 'q'
 stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 
 # Import the database models.
-_(global).extend require('./models')
+_(global).extend require('./lib/models')
 
 
 #
@@ -33,7 +33,7 @@ logger = Winston.loggers.add 'requests', console:{colorize:true, label:'requests
 # Request Handlers
 # --
 
-SendClientMessage = require './messages'
+SendClientMessage = require './lib/messages'
 
 inviteP = ({initiator, recipient, invitationType, messageType, messageParameters}) ->
   messageType ?= invitationType

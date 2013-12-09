@@ -7,7 +7,7 @@
 require('dotenv').load()
 _ = require 'underscore'
 Q = require 'q'
-APNS = require('./apns')
+APNS = require('../integrations/apns')
 _(global).extend require('./models')
 
 

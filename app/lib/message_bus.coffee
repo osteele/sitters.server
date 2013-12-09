@@ -1,6 +1,6 @@
 require('dotenv').load()
 url = require 'url'
-firebase = require '../lib/firebase'
+firebase = require '../integrations/firebase'
 
 Winston = require 'winston'
 logger = Winston.loggers.add 'message-bus', console:{colorize:true, label:'message-bus'}

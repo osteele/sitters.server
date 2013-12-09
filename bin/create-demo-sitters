@@ -3,7 +3,7 @@
 _ = require 'underscore'
 Q = require 'q'
 Q.longStackSupport = true
-_(global).extend require('../lib/models')
+_(global).extend require('../app/lib/models')
 
 SitterProfileData = require '../data/sitters.json'
 

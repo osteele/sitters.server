@@ -18,7 +18,7 @@ Q = require 'q'
 Q.longStackSupport = true unless process.env.NODE_ENV == 'production' and not process.env.DEBUG_SERVER
 util = require 'util'
 moment = require 'moment'
-kue = require './lib/kue'
+kue = require './integrations/kue'
 jobs = kue.createQueue()
 _(global).extend require('./lib/models')
 
@@ -55,7 +55,7 @@ process.on 'uncaughtException', (err) ->
 # APNS
 # --
 
-APNS = require('./lib/apns')
+APNS = require('./integrations/apns')
 
 # Remove devices with invalid tokens.
 APNS.connection.on 'transmissionError', (errCode, notification, device) ->
@@ -81,7 +81,7 @@ APNS.feedback.on 'feedback', (devices) ->
 # Firebase
 # --
 
-firebase = require './lib/firebase'
+firebase = require './integrations/firebase'
 firebase.authenticateAs {}, {admin:true}
 
 updateFirebaseFromDatabase = require('./lib/push_to_firebase').updateAllP
@@ -131,7 +131,7 @@ processRequest = (request) ->
   promise = promise.then -> updateFirebaseFromDatabase()
   return promise
 
-RequestHandlers = require './lib/request-handlers'
+RequestHandlers = require './request-handlers'
 
 
 #

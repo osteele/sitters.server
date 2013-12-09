@@ -17,7 +17,7 @@ if process.env.NODE_ENV == 'production' or process.env.CI
   loggerOptions = {console:{colorize:true, label:'sql'}}
 else
   # In development, route sql to a file so that it's out of the way but available via tail -f.
-  loggerOptions = {console:{silent:true}, file:{filename:__dirname + '/../logs/sql.log', json:false}}
+  loggerOptions = {console:{silent:true}, file:{filename:__dirname + '/../../logs/sql.log', json:false}}
 logger = winston.loggers.add 'sql', loggerOptions
 
 # This is exported so that ./bin/print-generated-schema can override it

@@ -8,8 +8,8 @@
 # --
 
 require('dotenv').load()
-kue = require './lib/kue'
-require './workers'
+kue = require './app/integrations/kue'
+require './app/workers'
 
 # Set the process's title so it's easier to find in `ps`, # `top`, Activity Monitor, and so on.
 process.title = 'sitters.server'
