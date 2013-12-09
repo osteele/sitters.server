@@ -33,14 +33,15 @@ createClientP = (userId) ->
 processMessagesP = ->
   mockMessageBus.mock.process() and Q.delay(100).then(-> processMessagesP())
 
-it 'should round trip an add sitter invitation', (done) ->
-  sequelize.execute("DELETE FROM change_log")
-  .then(-> sequelize.execute("DELETE FROM invitations"))
-  .then(->
+describe 'invitations', ->
+  beforeEach (done) ->
+    sequelize.execute("DELETE FROM change_log").then -> done()
+
+  it 'should round trip an add sitter invitation', (done) ->
     createClientP(1).then (client) ->
-      client.sendRequestP 'addSitter', sitterId:3, delay:0
-  ).then(-> processMessagesP()
-  ).then(-> Q.delay(100)
-  ).then(-> models.Invitation.count where:{status:'accepted'}
-  ).then((n) -> n.should.eql 1
-  ).done -> done()
+      client.sendRequestP('addSitter', sitterId:3, delay:0)
+      .then(-> processMessagesP())
+      .then(-> Q.delay(100))
+      .then(-> models.Invitation.count where:{status:'accepted'})
+      .then((n) -> n.should.eql 1)
+      .done -> done()
