@@ -1,9 +1,7 @@
 require('dotenv').load()
 Q = require 'q'
 messageBus = require './message_bus'
-
-Winston = require 'winston'
-logger = Winston.loggers.add 'client', console:{colorize:true, label:'client'}
+logger = require('../loggers')('client')
 
 API_VERSION = 1
 

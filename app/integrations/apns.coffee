@@ -4,10 +4,7 @@ require('dotenv').load()
 apn = require 'apn'
 path = require 'path'
 util = require 'util'
-
-winston = require 'winston'
-winston.loggers.add 'APNS', console: {colorize: true, label: 'APNS'}
-logger = winston.loggers.get('APNS')
+logger = require('../loggers')('APNS')
 
 APNErrorText =
   0: 'No errors encountered'

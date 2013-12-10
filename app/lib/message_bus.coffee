@@ -1,9 +1,7 @@
 require('dotenv').load()
 url = require 'url'
 firebase = require '../integrations/firebase'
-
-Winston = require 'winston'
-logger = Winston.loggers.add 'message-bus', console:{colorize:true, label:'message-bus'}
+logger = require('../loggers')('message-bus')
 
 onMessageForAccount = (userAuthId, onMessage) ->
   # logger.info "Simulated user ##{@user.id} listening on #{url.parse(userMessageFB.toString()).path}"

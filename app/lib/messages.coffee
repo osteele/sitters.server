@@ -9,6 +9,7 @@ _ = require 'underscore'
 Q = require 'q'
 APNS = require('../integrations/apns')
 _(global).extend require('./models')
+logger = require('../loggers')('messages')
 
 
 #
@@ -17,14 +18,6 @@ _(global).extend require('./models')
 
 # The client and server embed the API version in requests and responses.
 API_VERSION = 1
-
-
-#
-# Configure Logging
-# --
-
-Winston = require 'winston'
-logger = Winston.loggers.add 'messages', console:{colorize:true, label:'messages'}
 
 
 #

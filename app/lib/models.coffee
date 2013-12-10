@@ -9,18 +9,10 @@ Q = require 'q'
 # Configure Logging
 # --
 
-winston = require 'winston'
-removeLoggedNewlines = false
-if process.env.NODE_ENV == 'production' or process.env.CI
-  # In production, log sql to stdout so that it's routed to consolidated logging
-  removeLoggedNewlines = true
-  loggerOptions = {console:{colorize:true, label:'sql'}}
-else
-  # In development, route sql to a file so that it's out of the way but available via tail -f.
-  loggerOptions = {console:{silent:true}, file:{filename:__dirname + '/../../logs/sql.log', json:false}}
-logger = winston.loggers.add 'sql', loggerOptions
+logger = require('../loggers')('sql')
+removeLoggedNewlines = process.env.NODE_ENV == 'production' or process.env.CI
 
-# This is exported so that ./bin/print-generated-schema can override it
+# Exported so that ./bin/print-generated-schema can override it
 exports.logger = (msg) -> logger.info msg
 
 

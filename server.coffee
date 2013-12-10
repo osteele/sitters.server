@@ -9,18 +9,11 @@
 
 require('dotenv').load()
 kue = require './app/integrations/kue'
+logger = require('./app/loggers')('server')
 require './app/workers'
 
 # Set the process's title so it's easier to find in `ps`, # `top`, Activity Monitor, and so on.
 process.title = 'sitters.server'
-
-
-#
-# Configure Logging
-# --
-
-Winston = require 'winston'
-logger = Winston.loggers.add 'web', console:{colorize:true, label:'web'}
 
 
 #

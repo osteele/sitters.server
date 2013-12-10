@@ -21,14 +21,7 @@ moment = require 'moment'
 kue = require './integrations/kue'
 jobs = kue.createQueue()
 _(global).extend require('./lib/models')
-
-
-#
-# Logging
-# --
-
-Winston = require 'winston'
-logger = Winston.loggers.add 'workers', console:{colorize:true, label:'workers'}
+logger = require('./loggers')('workers')
 
 
 #

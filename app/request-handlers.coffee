@@ -5,6 +5,7 @@
 require('dotenv').load()
 _ = require 'underscore'
 Q = require 'q'
+logger = require('./loggers')('requests')
 
 # Stripe handles payment card storage and payment processing.
 stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
@@ -19,14 +20,6 @@ _(global).extend require('./lib/models')
 
 # Maximum number of sitters attached to a family.
 MaxSitterCount = 7
-
-
-#
-# Configure Logging
-# --
-
-Winston = require 'winston'
-logger = Winston.loggers.add 'requests', console:{colorize:true, label:'requests'}
 
 
 #
