@@ -1,3 +1,6 @@
+require('dotenv').load()
+process.env.NODE_ENV = 'test'
+
 require 'coffee-errors'
 Q = require 'q'
 _ = require 'underscore'

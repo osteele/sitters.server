@@ -7,7 +7,7 @@ _(global).extend require('./models')
 _(global).extend require('../integrations/firebase')
 
 winston = require 'winston'
-logger = winston.loggers.add 'firebase-push', console: {colorize: true, label: '→firebase'}
+logger = require('../loggers')('→firebase')
 
 # Database models that are synced to Firebase.
 SyncedModels = [Account, Family, PaymentCustomer, SitterProfile, User]

@@ -4,6 +4,7 @@ Q = require 'q'
 Firebase = require('firebase')
 FirebaseTokenGenerator = require('firebase-token-generator')
 TokenGenerator = new FirebaseTokenGenerator(process.env.FIREBASE_SECRET)
+logger = require('../loggers')('firebase')
 
 FirebaseRoot = new Firebase('https://sevensitters.firebaseIO.com/')
 EnvironmentFB = do ->
@@ -14,10 +15,10 @@ EnvironmentFB = do ->
 authenticateAs = (data={}, options={}) ->
   token = TokenGenerator.createToken(data, options)
   FirebaseRoot.auth token, (error, result) ->
-    console.error 'error', error if error
+    logger.error 'error', error if error
     # will expire at result.expires * 1000
   , (error) ->
-    console.info "Renewing expired firebase authentication"
+    logger.info "Renewing expired firebase authentication"
     authenticateAs data, options
 
 module.exports = {

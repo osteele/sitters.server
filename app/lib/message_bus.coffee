@@ -4,7 +4,6 @@ firebase = require '../integrations/firebase'
 logger = require('../loggers')('message-bus')
 
 onMessageForAccount = (userAuthId, onMessage) ->
-  # logger.info "Simulated user ##{@user.id} listening on #{url.parse(userMessageFB.toString()).path}"
   userMessageFB = firebase.MessageFB.child(userAuthId)
   logger.info "Simulated user listening on #{url.parse(userMessageFB.toString()).path}"
   userMessageFB.on 'child_added', (snapshot) =>
