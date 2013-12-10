@@ -1,14 +1,11 @@
 {
   "name": "sitters",
   "version": "0.0.1",
+  "description": "Seven Sitters Web and API Server",
   "author": "Oliver Steele <steele@osteele.com>",
   "private": true,
-  "repositories": [
-    {
-      "type": "git",
-      "url": "git://github.com/osteele/sitters.server.git"
-    }
-  ],
+  "main": "server.coffee",
+  "repositories": [{"type": "git", "url": "git://github.com/osteele/sitters.server.git"}],
   "engines": {
     "npm": "~1.3.11",
     "node": "~0.10.21"
@@ -17,51 +14,50 @@
     "preinstall": "rm -rf node_modules/rollbar",
     "postinstall": "./bin/install-certificates",
     "initialize-database": "./bin/initialize-database",
-    "start": "foreman start",
+    "start": "coffee server.coffee",
     "server": "coffee server.coffee",
-    "test": "mocha --compilers coffee:coffee-script"
+    "test": "mocha --bail -R spec --compilers coffee:coffee-script"
   },
   "dependencies": {
+    "apn": "~1.4.3",
     "coffee-script": "~1.6.3",
+    "connect-redis": "~1.4.6",
     "dotenv": "~0.2.3",
     "express": "~3.4.6",
     "firebase": "~0.6.22",
     "firebase-token-generator": "~0.1.4",
-    "q": "~0.9.7",
-    "underscore": "~1.5.2",
-    "underscore.string": "~2.3.3",
-    "optimist": "~0.6.0",
-    "winston": "~0.7.2",
+    "jade": "~0.35.0",
+    "kue": "~0.6.2",
+    "marked": "~0.2.10",
     "moment": "~2.4.0",
-    "sequelize": "~2.0.0-beta.1",
-    "sequelize-postgres": "~2.0.0-beta.1",
-    "pg": "~2.8.3",
-    "apn": "~1.4.3",
-    "stripe": "~2.3.2",
-    "rollbar": "osteele/node_rollbar",
+    "optimist": "~0.6.0",
     "passport": "~0.1.17",
     "passport-github": "~0.1.5",
-    "jade": "~0.35.0",
-    "marked": "~0.2.10",
-    "kue": "~0.6.2",
+    "pg": "~2.8.3",
+    "q": "~0.9.7",
     "redis-url": "~0.2.0",
-    "connect-redis": "~1.4.6"
+    "rollbar": "osteele/node_rollbar",
+    "sequelize": "~2.0.0-beta.1",
+    "sequelize-postgres": "~2.0.0-beta.1",
+    "stripe": "~2.3.2",
+    "underscore": "~1.5.2",
+    "underscore.string": "~2.3.3",
+    "winston": "~0.7.2"
   },
   "devDependencies": {
+    "coffee-errors": "~0.8.4",
+    "debug": "~0.7.4",
     "grunt": "~0.4.2",
     "grunt-coffeelint": "~0.0.7",
-    "grunt-contrib-watch": "~0.5.3",
-    "load-grunt-tasks": "~0.2.0",
-    "debug": "~0.7.4",
-    "kexec": "~0.1.1",
-    "js-yaml": "~2.1.3",
-    "read": "~1.0.5",
-    "grunt-docco": "~0.3.0",
     "grunt-contrib-clean": "~0.5.0",
+    "grunt-contrib-watch": "~0.5.3",
+    "grunt-docco": "~0.3.0",
+    "js-yaml": "~2.1.3",
+    "kexec": "~0.1.1",
+    "load-grunt-tasks": "~0.2.0",
     "mocha": "~1.15.1",
+    "read": "~1.0.5",
     "should": "~2.1.1",
-    "sinon": "~1.7.3",
-    "coffee-errors": "~0.8.4"
-  },
-  "main": "server.coffee"
+    "sinon": "~1.7.3"
+  }
 }
