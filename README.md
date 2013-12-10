@@ -1,8 +1,8 @@
-# Build Status
+# Seven Sitters Server
 
-![](https://www.codeship.io/projects/68120b20-426a-0131-2e69-0aefc5d00e69/status?branch=master)
+[ ![Codeship Status for osteele/sitters.server](https://www.codeship.io/projects/68120b20-426a-0131-2e69-0aefc5d00e69/status?branch=master)](https://www.codeship.io/projects/10615)
 
-# Setting up a Development Environment
+## Setting up a Development Environment
 
 Install [Homebrew](http://brew.sh).
 
@@ -28,7 +28,7 @@ Create and initialize the database.
     npm run initialize-database
 
 
-# Running
+## Running
 
 Run the web server and workers:
 
@@ -39,7 +39,7 @@ Run a simulated client in another terminal:
     ./bin/client
 
 
-# Developer Documentation
+## Developer Documentation
 
 Run `grunt docs` to create source documentation in `./build/docs`.
 
@@ -54,7 +54,7 @@ Server -> Client requests are documented in `./lib/messages.coffee`.
 If the source documentation has been built, this is also documented in `./build/docs/lib/messages.html`.
 
 
-# Developer Guidelines
+## Developer Guidelines
 
 Code must pass `grunt lint`.
 
@@ -71,7 +71,7 @@ Style guides:
   - Prefer single quote `'strings'` to double quote `"strings"` where there's no interpolated parameters.
 
 
-# Service Dashboards
+## Service Dashboards
 
 - [Firebase](https://sevensitters.firebaseio.com/) data synchronization
 - [Heroku](https://dashboard.heroku.com/apps/sevensitters-api/resources) PaaS hosting
