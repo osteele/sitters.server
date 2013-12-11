@@ -55,7 +55,7 @@ APNS.connection.on 'transmissionError', (errCode, notification, device) ->
   return unless errCode == 8 # invalid token
   token = device.token.toString('hex')
   logger.info "Removing device token=#{token}"
-  sequelize.query('DELETE FROM devices WHERE token=:token', null, {raw:true}, {token})
+  sequelize.execute('DELETE FROM devices WHERE token=:token', {token})
     .then(-> logger.info "Deleted token=#{token}")
     .done()
 
