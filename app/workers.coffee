@@ -141,3 +141,8 @@ simulateSittersP =
         new Client(user).run()
 
 simulateSittersP.done()
+
+
+# Exports
+# --
+exports.jobs = jobs
