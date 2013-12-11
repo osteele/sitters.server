@@ -25,7 +25,7 @@ Copy `.env.template` to `.env` and fill in the values:
 
 Create and initialize the database.
 
-    npm run initialize-database
+    npm run reset-database
 
 
 ## Running

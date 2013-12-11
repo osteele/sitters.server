@@ -1,2 +1,2 @@
 web: coffee server.coffee
-#worker: coffee worker.coffee
+reset-database: ./bin/reset-database

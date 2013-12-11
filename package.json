@@ -18,7 +18,7 @@
   "scripts": {
     "preinstall": "rm -rf node_modules/rollbar",
     "postinstall": "./bin/install-certificates",
-    "initialize-database": "./bin/initialize-database",
+    "reset-database": "./bin/reset-database",
     "start": "coffee server.coffee",
     "server": "coffee server.coffee",
     "test": "./bin/test"
