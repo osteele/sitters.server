@@ -127,6 +127,9 @@ app.get '/admin', requireAdmin, (req, res) ->
 # Start Server
 # --
 
-port = process.env.PORT || 5000
-app.listen port, ->
-  logger.info "Listening on #{port}"
+if require.main == module
+  port = process.env.PORT || 5000
+  app.listen port, ->
+    logger.info "Listening on #{port}"
+
+module.exports = app

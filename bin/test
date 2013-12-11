@@ -1,0 +1,4 @@
+#!/bin/bash -eu
+
+mocha --bail -R spec --compilers coffee:coffee-script ./test/test_workers.coffee
+mocha --bail -R spec --compilers coffee:coffee-script ./test/test_routes.coffee

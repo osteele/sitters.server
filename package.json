@@ -5,7 +5,12 @@
   "author": "Oliver Steele <steele@osteele.com>",
   "private": true,
   "main": "server.coffee",
-  "repositories": [{"type": "git", "url": "git://github.com/osteele/sitters.server.git"}],
+  "repositories": [
+    {
+      "type": "git",
+      "url": "git://github.com/osteele/sitters.server.git"
+    }
+  ],
   "engines": {
     "npm": "~1.3.11",
     "node": "~0.10.21"
@@ -16,7 +21,7 @@
     "initialize-database": "./bin/initialize-database",
     "start": "coffee server.coffee",
     "server": "coffee server.coffee",
-    "test": "mocha --bail -R spec --compilers coffee:coffee-script"
+    "test": "./bin/test"
   },
   "dependencies": {
     "apn": "~1.4.3",
@@ -58,6 +63,7 @@
     "mocha": "~1.15.1",
     "read": "~1.0.5",
     "should": "~2.1.1",
-    "sinon": "~1.7.3"
+    "sinon": "~1.7.3",
+    "supertest": "~0.8.2"
   }
 }
