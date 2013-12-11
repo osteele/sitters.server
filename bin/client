@@ -12,7 +12,7 @@ _.mixin _.str.exports()
 stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 
 argv = require('optimist').argv
-process.env.FIREBASE_ENVIRONMENT = 'production' if argv.production
+process.env.FIREBASE_ENV = 'production' if argv.production
 
 _(global).extend require('../lib/utils')
 {User} = require '../app/lib/models'

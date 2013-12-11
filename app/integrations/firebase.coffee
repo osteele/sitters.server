@@ -8,7 +8,7 @@ logger = require('../loggers')('firebase')
 
 FirebaseRoot = new Firebase('https://sevensitters.firebaseIO.com/')
 EnvironmentFB = do ->
-  prefix = process.env.FIREBASE_ENVIRONMENT || process.env.NODE_ENV || 'development'
+  prefix = process.env.FIREBASE_ENV || process.env.NODE_ENV || 'development'
   FirebaseRoot.child(prefix)
 
 # Wrapper for `FirebaseRoot.auth`. Creates the token, authenticates with a handler to renews it when it expires.
