@@ -5,7 +5,9 @@ class Queue
 
   create: (type, data) ->
     return {
-      save: => @inactive.push {type, data}
+      save: (callback) =>
+        @inactive.push {type, data}
+        setTimeout (-> callback?()), 1
     }
 
   process: (type, callback) ->
@@ -22,14 +24,15 @@ class Queue
     @inactive = []
 
   run: ->
-    while job = @inactive.shift()
-      @active << job
-      for callback in (@callbacks[job.type] || [])
-        # console.log 'callback', callback, job.data
-        callback job, (err) => @markJobDone job, err
+    while @inactive.length
+      do =>
+        job = @inactive.shift()
+        @active.push job
+        for callback in (@callbacks[job.type] || [])
+          callback job, (err) => @markJobDone job, err
 
   markJobDone: (job, err) ->
-    index = @active.indexOf
+    index = @active.indexOf(job)
     @active.splice index, 1 if index >= 0
     throw err if err
 

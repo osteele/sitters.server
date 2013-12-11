@@ -91,12 +91,12 @@ updateFirebaseFromDatabase().then (count) ->
 # The client pushes requests to Firebase, which handles auth.
 # Move them from Firebase to the job queue.
 messageBus = require './lib/message_bus'
-messageBus.onRequest (request) ->
+messageBus.onServerRequest (request, done) ->
   title = "#{request.requestType} from #{request.userAuthId}"
-  jobs.create('request', {request, title}).save()
+  jobs.create('request', {request, title}).save -> done()
 
 jobs.process 'request', (job, done) ->
-  processRequest(job.data.request)
+  processRequestP(job.data.request)
   .then(
     -> done()
     (err) ->
@@ -105,7 +105,7 @@ jobs.process 'request', (job, done) ->
       done err
   ).done()
 
-processRequest = (request) ->
+processRequestP = (request) ->
   {userAuthId, requestType, parameters} = request
   rollbar.reportMessage "Process #{requestType}", 'info'
   accountKey = userAuthId.replace('/', '-')

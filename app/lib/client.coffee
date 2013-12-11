@@ -10,24 +10,24 @@ DefaultSitterResponseDelay = process.env.DEFAULT_SITTER_CONFIRMATION_DELAY || 20
 
 class Client
   constructor: (@user) ->
-    d = Q.defer()
-    @messageReceivedP = d.promise
-    @_messageReceivedNotify = (msg) -> d.notify msg
-    @userAuthP =
+    # d = Q.defer()
+    # @messageReceivedP = d.promise
+    # @_messageReceivedNotify = (msg) -> d.notify msg
+    @_userAuthP =
       @user.getAccounts().then (accounts) =>
         throw new Error("Can't emulate user ##{@user.id}. No associated account.") unless accounts.length
         accounts[0].authKey
 
   run: ->
-    @userAuthP.then((userAuthId) =>
-      messageBus.onMessageForAccount userAuthId, (message) =>
-        @_messageReceivedNotify message
-        @processMessage message
+    @_userAuthP.then((userAuthId) =>
+      messageBus.onMessageForAccount userAuthId, (message, done) =>
+        # @_messageReceivedNotify message
+        @processMessage message, done
     ).done()
     return this
 
   sendRequestP: (requestType, parameters) ->
-    @userAuthP.then (userAuthId) =>
+    @_userAuthP.then (userAuthId) =>
       request =
         requestType : requestType
         apiVersion  : API_VERSION
@@ -41,7 +41,7 @@ class Client
   sendRequest: (requestType, parameters) ->
     @sendRequestP(requestType, parameters).done()
 
-  processMessage: ({messageType, parameters}) ->
+  processMessage: ({messageType, parameters}, done) ->
     logger.info "Processing #{messageType}"
     {simulatedDelay} = parameters
     simulatedDelay ?= DefaultSitterResponseDelay
@@ -49,7 +49,9 @@ class Client
       when 'inviteSitterToFamily', 'reserveSitterForTime'
         logger.info "Waiting #{simulatedDelay}s" if simulatedDelay > 0
         Q.delay(simulatedDelay * 1000)
-        .then(=> @sendRequest 'acceptInvitation', parameters)
-        .done()
+        .then(=> @sendRequestP 'acceptInvitation', parameters)
+        .done -> done?()
+      else
+        done?()
 
 module.exports = Client

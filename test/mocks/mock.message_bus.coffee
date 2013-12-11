@@ -1,39 +1,43 @@
-messages = []
-requests = []
-messageHandlers = {}
-requestHandlers = []
+activeMessages = null
+inactiveMessages = null
+messageHandlers = {server:[]}
 
-processRequests = ->
-  count = 0
-  while request = requests.shift()
-    count += 1
-    onRequest(request) for onRequest in requestHandlers
-  return count > 0
+messageDone = (message) ->
+  index = activeMessages.indexOf(message)
+  activeMessages.splice index, 1 if index >= 0
 
 processMessages = ->
-  count = 0
-  while messages.length
-    {userAuthId, message} = messages.shift()
-    count += 1
-    onMessage(message) for onMessage in (messageHandlers[userAuthId] ? [])
-  return count > 0
+  while inactiveMessages.length
+    message = inactiveMessages.shift()
+    activeMessages.push message
+    {recipient, data} = message
+    for callback in (messageHandlers[recipient] ? [])
+      callback data, -> messageDone message
+
+resetMessages = ->
+  activeMessages = []
+  inactiveMessages = []
+
+resetMessages()
 
 module.exports =
-  onMessageForAccount: (userAuthId, onMessage) ->
-    (messageHandlers[userAuthId] ?= []).push onMessage
+  onMessageForAccount: (accountId, callback) ->
+    (messageHandlers[accountId] ?= []).push callback
 
-  onRequest: (onRequest) ->
-    requestHandlers.push onRequest
+  onServerRequest: (callback) ->
+    messageHandlers.server.push callback
 
-  sendMessageToAccount: (userAuthId, message) ->
-    messages.push {userAuthId, message}
+  sendMessageToAccount: (accountId, data) ->
+    inactiveMessages.push {recipient:accountId, data}
 
-  sendRequestToServer: (request) ->
-    requests.push request
+  sendRequestToServer: (data) ->
+    inactiveMessages.push {recipient:'server', data}
 
-  mock:
-    process: ->
-      count = 0
-      while processRequests() or processMessages()
-        count += 1
-      return count > 0
+  activeCount: ->
+    # for {recipient} in activeMessages
+    #   console.log 'pending', recipient
+    return activeMessages.length
+
+  resetMessages: resetMessages
+
+  run: processMessages
