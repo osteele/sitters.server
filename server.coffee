@@ -71,13 +71,16 @@ app.configure ->
   app.use express.urlencoded()
   app.use express.json()
   app.use express.methodOverride()
-  app.use express.session(store:sessionStore, secret:sessionSecret)
+  app.use express.session store:sessionStore, secret:sessionSecret
   app.use passport.initialize()
   app.use passport.session()
   app.use app.router
   app.use express.static(__dirname + '/public')
   app.use requireAdmin
   app.use '/jobs', kue.app
+  app.use (err, req, res, next) ->
+    console.error err.stack
+    next err
 
 app.get '/health', (request, response) ->
   response.send 'OK'
@@ -85,6 +88,10 @@ app.get '/health', (request, response) ->
 # The client pings this to awaken the server after dropping a request in the Firebase queue.
 app.get '/ping', (request, response) ->
   response.send 'OK'
+
+app.get '/simulate-error', (request, response) ->
+  response.send 401 if process.env.NODE_ENV == 'production'
+  throw new Error('simulated server error')
 
 
 #
