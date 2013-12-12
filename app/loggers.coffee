@@ -10,7 +10,7 @@ loggingOptionsFor = (name) ->
     when 'test'
       {console:{label:name, level:log_level || 'error', timestamp:true}}
     when 'production'
-      {console:{label:name}, level:log_level || 'info'}
+      {console:{label:name, level:log_level || 'info'}}
     else
       throw new Exception("Unknown environment: #{env}")
 
