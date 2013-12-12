@@ -61,6 +61,7 @@ sessionStore = do ->
       pass: (url.auth || '').split(':')[1]
   new RedisStore(options)
 sessionSecret = process.env.SESSION_SECRET
+raise new Error('SESSION_SECRET environment variable must be defined') unless sessionSecret?
 
 app.set 'views', __dirname + '/views'
 app.set 'view engine', 'jade'
