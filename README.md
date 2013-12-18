@@ -21,11 +21,8 @@ Copy `.env.template` to `.env` and fill in the values:
 
     cp .env.template .env
     $EDITOR .env
-    # fill in value for FIREBASE_SECRET
+    # fill in the value for FIREBASE_SECRET
 
-Create and initialize the database.
-
-    npm run update-development-database
 
 
 ## Running

@@ -1,2 +1,2 @@
 web: coffee server.coffee
-reset-database: ./bin/reset-database
+migrate: ./node_modules/.bin/db-migrate up

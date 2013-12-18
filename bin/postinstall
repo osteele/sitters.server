@@ -1,0 +1,14 @@
+#!/bin/bash -eu
+
+DATABASE_URL=${DATABASE_URL:-postgres://sitters:sitters@127.0.0.1:5432/sitters}
+
+cd `dirname $0`/..
+
+if [[ $DATABASE_URL =~ '@127.0.0.1:' ]]; then
+  psql -d postgres -c 'CREATE DATABASE sitters' 2> /dev/null || true
+  psql -d postgres -c 'CREATE USER sitters' 2> /dev/null || true
+fi
+
+./node_modules/.bin/db-migrate up
+./bin/create-demo-sitters
+./bin/install-certificates

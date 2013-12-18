@@ -17,8 +17,7 @@
   },
   "scripts": {
     "preinstall": "rm -rf node_modules/rollbar",
-    "postinstall": "./bin/install-certificates",
-    "update-development-database": "./bin/update-development-database",
+    "postinstall": "./bin/postinstall",
     "start": "coffee server.coffee",
     "server": "coffee server.coffee",
     "test": "./bin/test"
