@@ -7,37 +7,41 @@ _(global).extend require('../app/lib/models')
 
 SitterProfileData = require '../data/sitters.json'
 
-updateSittersP = Q.all SitterProfileData.map (sitterData) ->
-  userProfileId = sitterData.id
+updateSittersP = Q.all SitterProfileData.map (sitterData, i) ->
+  n = i + 1
+  uuid = sitterData.uuid
 
   profileData = _.extend {}, sitterData
-  delete profileData.id
+  delete profileData.uuid
 
   userAttributes =
+    uuid         : uuid
     displayName  : profileData.name
-    email        : "sitter-#{userProfileId}@sevensitters.com"
+    email        : "sitter-#{n}@sevensitters.com"
     is_simulated : true
-    phone        : "415 555-000#{userProfileId}"
+    phone        : "415 555-000#{n}"
     role         : 'sitter'
 
-  console.info 'Updating', userProfileId, profileData.name
-  UserProfile.findOrCreate(id:userProfileId).then (userProfile) ->
-    userProfile.getUser().then (user) ->
-      Q.when(user or User.create(userAttributes)).then (user) ->
-        accountAttributes =
-          user_id          : user.id
-          provider_name    : 'facebook'
-          provider_user_id : String(172347878787877 + userProfileId)
+  console.info 'Updating', uuid, profileData.name
+  # UserProfile.findOrCreate(id:userProfileId).then (userProfile) ->
+  User.findOrCreate({uuid}, userAttributes).then (user) ->
+    accountAttributes =
+      user_id          : user.id
+      provider_name    : 'facebook'
+      provider_user_id : String(172347878787877 + n)
 
-        Q.all [
-          user.updateAttributes userAttributes
-          user.setUserProfile userProfile
+    Q.all [
+      user.updateAttributes userAttributes
+      user.getUserProfile().then (profile) ->
+        if profile
           userProfile.updateAttributes data:profileData
-          # ensure each simulated user has an account, so that the simulator
-          # can receive message for that user
-          user.getAccounts().then (accounts) ->
-            Account.create(accountAttributes) unless accounts.length
-        ]
+        else
+          UserProfile.create profileData
+      # ensure each simulated user has an account, so that the simulator
+      # can receive message for that user
+      user.getAccounts().then (accounts) ->
+        Account.create(accountAttributes) unless accounts.length
+    ]
 
 updateSittersP
   .catch((error) -> console.error error)

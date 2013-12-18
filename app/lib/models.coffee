@@ -90,6 +90,7 @@ UserProfile = sequelize.define 'user_profiles',
       data.name.split(/\s/).shift()
 
 User = sequelize.define 'users',
+  uuid: {type:Sequelize.UUID, defaultValue: Sequelize.UUIDV4}
   displayName: Sequelize.STRING
   # For now, each user has a single email and phone. Move these to an association if this changes.
   email: {type:Sequelize.STRING, index:true, unique:true}

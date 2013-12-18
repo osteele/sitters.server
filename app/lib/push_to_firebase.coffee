@@ -25,7 +25,12 @@ entityUpdaters =
       user.getFamily().then (family) ->
         if family
           fb = getUserFB(account).child('sitter_ids')
-          fbSetP fb, family.sitter_ids
+          sitterIds = family.sitter_ids
+          if sitterIds.length
+            sequelize.execute("SELECT uuid FROM users WHERE id IN (#{sitterIds.join(',')})") .then (uuids) ->
+              fbSetP fb, _.pluck(uuids, 'uuid')
+          else
+            fbSetP fb, []
 
   families: (family) ->
     family.getParents().then (parents) ->

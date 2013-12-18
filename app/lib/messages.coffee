@@ -74,7 +74,7 @@ module.exports =
       messageType: 'sitterAcceptedConnection'
       messageTitle: 'Sitter Confirmed'
       messageText: "#{sitter.displayName} has accepted your request. We’ve added her to your Seven Sitters."
-      parameters: {sitterId:sitter.id}
+      parameters: {sitterId:sitter.uuid}
 
   # The sitter accepted a booking. Tell the parent (user).
   sitterConfirmedReservation: (user, {sitter, startTime, endTime}) ->
@@ -82,4 +82,4 @@ module.exports =
       messageType: 'sitterConfirmedReservation'
       messageTitle: 'Sitter Confirmed'
       messageText: "#{sitter.displayName} has confirmed your request."
-      parameters: {sitterId:sitter.id, startTime, endTime}
+      parameters: {sitterId:sitter.uuid, startTime, endTime}

@@ -61,7 +61,7 @@ module.exports =
   # responding.
   addSitter: ({user:parent}, {sitterId, delay:simulatedDelay}) ->
     # TODO return if the sitter is already on the list
-    User.find(sitterId).then (sitter) ->
+    User.find(where:{uuid:sitterId}).then (sitter) ->
       inviteP
         invitationType    : 'inviteSitterToFamily'
         initiator         : parent
@@ -158,7 +158,7 @@ module.exports =
   # `delay` is used for development and debugging; it sets the amount of time that one
   # of the simulated sitters will wait before responding.
   reserveSitter: ({user:parent}, {sitterId, startTime, endTime, delay:simulatedDelay}) ->
-    User.find(sitterId).then (sitter) ->
+    User.find(where:{uuid:sitterId}).then (sitter) ->
       inviteP
         invitationType    : 'reserveSitterForTime'
         initiator         : parent

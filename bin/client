@@ -31,7 +31,7 @@ Defaults = {
   deviceUuid          : '68753A44-4D6F-1226-9C60-0050E4C00067'
   invitationId        : 0
   sitterCount         : 2
-  sitterId            : 3
+  sitterId            : '70f81b13-baba-424b-855f-134553717a63'
   sitterResponseDelay : 0
   sitterStartTime     : new Date().tap -> @setToBeginningOfHour(18)
   sitterEndTime       : new Date().tap -> @setToBeginningOfHour(22)

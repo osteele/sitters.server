@@ -84,7 +84,7 @@ describe 'invitations', ->
 
   it 'should round trip an add sitter invitation', (done) ->
     createClientP(1).then (client) ->
-      client.sendRequestP('addSitter', sitterId:3, delay:0)
+      client.sendRequestP('addSitter', sitterId:'70f81b13-baba-424b-855f-134553717a63', delay:0)
       .then(-> processMessagesP())
       .then(-> models.Invitation.count where:{status:'accepted'})
       .then((invitationCount) -> invitationCount.should.eql 1)
