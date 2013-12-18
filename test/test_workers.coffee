@@ -20,17 +20,18 @@ mockFirebase = require './mocks/mock.firebase'
 messageBus = require './mocks/mock.message_bus'
 
 require('../lib/mock_requires')
+  # node module mocks
+  apn: require './mocks/mock.apn'
   firebase: mockFirebase
   'firebase-token-generator': mockFirebase.mock.TokenGenerator
   kue: require './mocks/mock.kue'
-  './message_bus': messageBus
-  './lib/message_bus': messageBus
   rollbar:
     init: ->
     reportMessage: ->
     handleError: (err, cb) -> throw err
   stripe: -> {}
-  apn: require './mocks/mock.apn'
+  # app module mocks
+  '../app/lib/message_bus': messageBus
 
 
 # Import (non-mocked) application modules.
