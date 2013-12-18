@@ -38,6 +38,7 @@ Defaults = {
   userAuthId          : 'facebook-172347878787877'
   userName            : 'Mom'
   userEmail           : 'mom@host.com'
+  userRole            : 'parent'
 }
 
 authenticateAsUser = (userAuthId) ->
@@ -64,7 +65,8 @@ RequestTypeGenerators =
       # delete cardInfo.number
       Q {token:response.id, cardInfo}
 
-  registerUser: -> {displayName:Defaults.userName, email:Defaults.userEmail}
+  registerUser: ->
+    {displayName:Defaults.userName, email:Defaults.userEmail, role:Defaults.userRole}
 
   removePaymentCard: -> {}
 

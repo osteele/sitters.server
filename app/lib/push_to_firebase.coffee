@@ -23,8 +23,9 @@ entityUpdaters =
   accounts: (account) ->
     account.getUser().then (user) ->
       user.getFamily().then (family) ->
-        fb = getUserFB(account).child('sitter_ids')
-        fbSetP fb, family.sitter_ids
+        if family
+          fb = getUserFB(account).child('sitter_ids')
+          fbSetP fb, family.sitter_ids
 
   families: (family) ->
     family.getParents().then (parents) ->

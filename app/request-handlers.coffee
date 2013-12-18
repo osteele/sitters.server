@@ -59,11 +59,9 @@ module.exports =
   # The parent sends this to invite a sitter who is already in the system to join the parent's family sitters. `delay`
   # is used for development and debugging; it sets the amount of time that one of the simulated sitters will wait before
   # responding.
-  addSitter: ({user:parent}, {sitterId:sitterProfileId, delay:simulatedDelay}) ->
+  addSitter: ({user:parent}, {sitterId, delay:simulatedDelay}) ->
     # TODO return if the sitter is already on the list
-    UserProfile.find(sitterProfileId)
-    .then((userProfile) -> userProfile.getUser())
-    .then (sitter) ->
+    User.find(sitterId).then (sitter) ->
       inviteP
         invitationType    : 'inviteSitterToFamily'
         initiator         : parent
@@ -80,17 +78,15 @@ module.exports =
       User.find(invitation.initiator_id).then (parent) ->
         Q.all [
           invitation.updateAttributes status:'accepted'
-          sitter.getUserProfile().then (userProfile) ->
-            updateUserSitterListP parent, (sitterProfileIds) ->
-              logger.info "Adding sitter", userProfile.id, "to", sitterProfileIds
-              return if userProfile.id in sitterProfileIds
-              return sitterProfileIds.concat([userProfile.id])
-          sitter.getUserProfile().then (userProfile) ->
-            message = {
-              inviteSitterToFamily : 'sitterAcceptedConnection'
-              reserveSitterForTime : 'sitterConfirmedReservation'
-            }[invitation.type] || throw new Exception("Unknown invitation type #{invitation.type}")
-            SendClientMessage[message] parent, {userProfile, startTime, endTime}
+          updateUserSitterListP parent, (sitterIds) ->
+            logger.info "Adding sitter", sitter.id, "to", sitterIds
+            return if sitter.id in sitterIds
+            return sitterIds.concat([sitter.id])
+          message = {
+            inviteSitterToFamily : 'sitterAcceptedConnection'
+            reserveSitterForTime : 'sitterConfirmedReservation'
+          }[invitation.type] || throw new Exception("Unknown invitation type #{invitation.type}")
+          SendClientMessage[message] parent, {sitter, startTime, endTime}
         ]
 
   # The client sends this when the user signs in, and on each launch if the user is already signed in. The server
@@ -129,10 +125,10 @@ module.exports =
   # The client sends this when a user signs in, and on each launch if the user is already signed in. The server ensures
   # that a User record exists, associates it with the account that the user authenticated with, and ensures that a
   # Family for this user exists.
-  registerUser: ({accountKey}, {displayName, email}) ->
+  registerUser: ({accountKey}, {displayName, email, role}) ->
     [provider_name, provider_user_id] = accountKey.split('-', 2)
     accountP = Account.findOrCreate {provider_name, provider_user_id}
-    userP = User.findOrCreate {email}, {displayName}
+    userP = User.findOrCreate {email}, {displayName, role}
     Q.all([accountP, userP]).spread (account, user) ->
       logger.info "Account key=#{accountKey}" if account
       logger.info "Update account #{account?.id} user_id=#{user?.id}"
@@ -161,10 +157,8 @@ module.exports =
   # The client sends this when the user requests a specific sitter for a specific time.
   # `delay` is used for development and debugging; it sets the amount of time that one
   # of the simulated sitters will wait before responding.
-  reserveSitter: ({user:parent}, {sitterId:sitterProfileId, startTime, endTime, delay:simulatedDelay}) ->
-    UserProfile.find(sitterProfileId)
-    .then((userProfile) -> userProfile.getUser())
-    .then (sitter) ->
+  reserveSitter: ({user:parent}, {sitterId, startTime, endTime, delay:simulatedDelay}) ->
+    User.find(sitterId).then (sitter) ->
       inviteP
         invitationType    : 'reserveSitterForTime'
         initiator         : parent
@@ -179,12 +173,12 @@ module.exports =
   # This message is used for testing. It changes the number of sitters associated with the user's family, filling them
   # in as needed from the simulated sitters.
   setSitterCount: ({user}, {count}) ->
-    updateUserSitterListP user, (sitter_ids) ->
+    updateUserSitterListP user, (sitterIds) ->
       count = Math.max(0, Math.min(MaxSitterCount, count))
-      return if sitter_ids.length == count
-      UserProfile.findAll(where:{is_simulated:true}, order:'id').then (sitters) ->
+      return if sitterIds.length == count
+      User.findAll(where:{is_simulated:true}, order:'id').then (sitters) ->
         availableSitterIds = _.pluck(sitters, 'id')
-        return _.union(sitter_ids, availableSitterIds)[0...count]
+        return _.union(sitterIds, availableSitterIds)[0...count]
 
   # This message is used for testing, to test server error handling and reporting. It throws an error. If running in the
   # production environment, it only throws an error if the `DEBUG_SERVER` environment variable is set.

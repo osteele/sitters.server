@@ -46,8 +46,19 @@ workers = require '../app/workers'
 # --
 Client = require '../app/lib/client'
 createClientP = (userId) ->
-  models.User.find(userId).then (user) ->
-    new Client(user).run()
+  {User} = models
+  testUserAttrs =
+    displayName : 'Test'
+    email       : 'test-user@sevensitters.com'
+    id          : userId
+    role        : 'parent'
+  User.findOrCreate({id:userId}, testUserAttrs).then (user) ->
+    accountAttributes =
+      user_id          : user.id
+      provider_name    : 'facebook'
+      provider_user_id : String(172347878787877)
+    user.getAccounts().then((accounts) -> Account.create(accountAttributes) unless accounts.length)
+    .then -> new Client(user).run()
 
 # Keep processing messages until they're done.
 processMessagesP = ->
@@ -76,5 +87,5 @@ describe 'invitations', ->
       client.sendRequestP('addSitter', sitterId:3, delay:0)
       .then(-> processMessagesP())
       .then(-> models.Invitation.count where:{status:'accepted'})
-      .then((n) -> n.should.eql 1)
+      .then((invitationCount) -> invitationCount.should.eql 1)
       .done -> done()

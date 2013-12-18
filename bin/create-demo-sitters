@@ -8,33 +8,36 @@ _(global).extend require('../app/lib/models')
 SitterProfileData = require '../data/sitters.json'
 
 updateSittersP = Q.all SitterProfileData.map (sitterData) ->
-  sitterProfileId = sitterData.id
+  userProfileId = sitterData.id
 
-  # make a copy of the
   profileData = _.extend {}, sitterData
   delete profileData.id
 
   userAttributes =
-    displayName: profileData.name
-    email: "sitter-#{sitterProfileId}@sevensitters.com"
-    phone: "415 555-000#{sitterProfileId}"
+    displayName  : profileData.name
+    email        : "sitter-#{userProfileId}@sevensitters.com"
+    is_simulated : true
+    phone        : "415 555-000#{userProfileId}"
+    role         : 'sitter'
 
-  console.info 'Updating', sitterProfileId, profileData.name
-  UserProfile.findOrCreate(id:sitterProfileId).then (userProfile) ->
+  console.info 'Updating', userProfileId, profileData.name
+  UserProfile.findOrCreate(id:userProfileId).then (userProfile) ->
     userProfile.getUser().then (user) ->
-      Q.when(user or User.create()).then (user) ->
+      Q.when(user or User.create(userAttributes)).then (user) ->
+        accountAttributes =
+          user_id          : user.id
+          provider_name    : 'facebook'
+          provider_user_id : String(172347878787877 + userProfileId)
+
         Q.all [
-          userProfile.updateAttributes data:profileData, is_simulated:true
-          user.setSitterProfile userProfile
           user.updateAttributes userAttributes
-          user.getAccounts()
-          .then (accounts) ->
-            accountAttributes =
-              user_id          : user.id
-              provider_name    : 'facebook'
-              provider_user_id : String(172347878787877 + sitterProfileId)
-            accounts.length or Account.create(accountAttributes)
-          ]
+          user.setUserProfile userProfile
+          userProfile.updateAttributes data:profileData
+          # ensure each simulated user has an account, so that the simulator
+          # can receive message for that user
+          user.getAccounts().then (accounts) ->
+            Account.create(accountAttributes) unless accounts.length
+        ]
 
 updateSittersP
   .catch((error) -> console.error error)

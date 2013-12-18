@@ -82,7 +82,6 @@ UserProfile = sequelize.define 'user_profiles',
       data = JSON.parse(data) while typeof data == 'string'
       return data
     set: (data) -> @setDataValue 'data', JSON.stringify(data)
-  is_simulated: {type:Sequelize.BOOLEAN, allowNull:false, defaultValue:false}
 ,
   getterMethods:
     firstName: ->
@@ -95,6 +94,8 @@ User = sequelize.define 'users',
   # For now, each user has a single email and phone. Move these to an association if this changes.
   email: {type:Sequelize.STRING, index:true, unique:true}
   phone: {type:Sequelize.STRING(15), index:true, unique:true}
+  role: {type:Sequelize.ENUM, values:['parent', 'sitter'], allowNull:false}
+  is_simulated: {type:Sequelize.BOOLEAN, allowNull:false, defaultValue:false}
 
 
 #

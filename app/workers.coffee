@@ -134,11 +134,8 @@ RequestHandlers = require './request-handlers'
 Client = require './lib/client'
 
 simulateSittersP =
-  UserProfile.findAll(where:{is_simulated:true})
-  .then (sitterProfiles) ->
-    Q.all sitterProfiles.map (userProfile) ->
-      userProfile.getUser().then (user) ->
-        new Client(user).run()
+  User.findAll(where:{role:'sitter', is_simulated:true}).then (users) ->
+    Q.all users.map (user) -> new Client(user).run()
 
 simulateSittersP.done()
 
