@@ -9,7 +9,7 @@ _(global).extend require('../integrations/firebase')
 winston = require 'winston'
 logger = require('../loggers')('→firebase')
 
-# Database models that are synced to Firebase.
+# Database models that are pushed to Firebase.
 SyncedModels = [Account, Family, PaymentCustomer, SitterProfile, User]
 
 ModelClassesByName = {}.tap (dict) ->
@@ -19,7 +19,7 @@ ModelClassesByName = {}.tap (dict) ->
 getUserFB = (account) ->
   UserFB.child('auth').child(account.firebaseKey)
 
-UpdateFunctions =
+entityUpdaters =
   accounts: (account) ->
     account.getUser().then (user) ->
       fb = getUserFB(account).child('family_id')
@@ -47,14 +47,23 @@ UpdateFunctions =
 
   users: (user) ->
     user.getAccounts().then (accounts) ->
-      Q.all accounts.map UpdateFunctions.accounts
+      Q.all accounts.map entityUpdaters.accounts
 
-SelectChangesSQL = "SELECT DISTINCT table_name, entity_id FROM change_log LIMIT :limit"
-DeleteChangesSQL = "DELETE FROM change_log WHERE table_name=:table_name AND entity_id=:entity_id"
+SelectChangesSQL = """
+SELECT DISTINCT table_name, entity_id, now() AS queried_at
+FROM change_log LIMIT :limit
+"""
 
+DeleteChangesSQL = """
+DELETE FROM change_log
+WHERE table_name=:table_name AND entity_id=:entity_id AND timestamp<=:queried_at
+"""
+
+# Update at most `limit` entities.
+# Returns the number of updated entities
 exports.updateSomeP = (limit=10) ->
   sequelize.query(SelectChangesSQL, null, {raw:true}, {limit}).then (rows) ->
-    Q.all(rows.map ({operation, table_name, entity_id}) ->
+    Q.all(rows.map ({table_name, entity_id, queried_at}) ->
       tableClass = ModelClassesByName[table_name]
       unless tableClass
         logger.warn "No update method for table #{table_name}"
@@ -63,11 +72,13 @@ exports.updateSomeP = (limit=10) ->
         logger.info "Deleted #{table_name} ##{entity_id}" unless entity
         return unless entity # TODO delete the fb record
         logger.info "Update #{table_name} ##{entity_id}"
-        UpdateFunctions[table_name]?(entity)
+        entityUpdaters[table_name]?(entity)
       ).then ->
-        sequelize.query(DeleteChangesSQL, null, {raw:true}, {table_name, entity_id})
+        sequelize.query(DeleteChangesSQL, null, {raw:true}, {table_name, entity_id, queried_at})
     ).get('length')
 
+# Update all remaining firebase entities, `trancheSize` at a time.
+# Returns the total number of updated entities
 exports.updateAllP = (trancheSize=10, total=0) ->
   exports.updateSomeP(trancheSize).then (count) ->
     total += count
