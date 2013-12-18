@@ -4,11 +4,12 @@ require('dotenv').load()
 Q = require 'Q'
 Q.longStackSupport = true
 
-# _(global).extend require('../lib/utils')
+firebase = require '../app/integrations/firebase'
+firebase.authenticateAs {}, admin:true
 
 {updateSomeP, updateAllP} = require('../app/lib/push_to_firebase')
 
 updateAllP().then((count) ->
   console.log 'Updated', count, 'entities'
-  process.exit()
+  process.exit 0
 ).done()
