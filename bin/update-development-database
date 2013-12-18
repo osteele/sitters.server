@@ -1,0 +1,8 @@
+#!/bin/bash -eu
+
+cd `dirname $0`/..
+
+psql -d postgres -c 'CREATE DATABASE sitters' 2> /dev/null || true
+psql -d postgres -c 'CREATE USER sitters' 2> /dev/null || true
+./node_modules/.bin/db-migrate up
+./bin/create-demo-sitters

@@ -18,7 +18,7 @@
   "scripts": {
     "preinstall": "rm -rf node_modules/rollbar",
     "postinstall": "./bin/install-certificates",
-    "reset-database": "./bin/reset-database",
+    "update-development-database": "./bin/update-development-database",
     "start": "coffee server.coffee",
     "server": "coffee server.coffee",
     "test": "./bin/test"
@@ -47,7 +47,9 @@
     "stripe": "~2.3.2",
     "underscore": "~1.5.2",
     "underscore.string": "~2.3.3",
-    "winston": "~0.7.2"
+    "winston": "~0.7.2",
+    "db-migrate": "~0.6.3",
+    "async": "~0.2.9"
   },
   "devDependencies": {
     "coffee-errors": "~0.8.4",

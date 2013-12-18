@@ -1,8 +1,0 @@
-#!/usr/bin/env coffee
-
-fs = require 'fs'
-path = require 'path'
-{sequelize} = require path.join(__dirname, '../app/lib/models')
-
-TriggersSQL = fs.readFileSync(path.join(__dirname, '../config/triggers.sql'), 'utf-8')
-sequelize.query(TriggersSQL, null, {raw:true}, {}).then(->process.exit()).done()
