@@ -77,12 +77,18 @@ PaymentCustomer = sequelize.define 'payment_customers',
 SitterProfile = sequelize.define 'sitter_profiles',
   data:
     type: Sequelize.TEXT
-    get: -> JSON.parse(JSON.parse(@getDataValue('data')))
+    get: ->
+      data = @getDataValue('data')
+      data = JSON.parse(data) while typeof data == 'string'
+      return data
     set: (data) -> @setDataValue 'data', JSON.stringify(data)
   is_simulated: {type:Sequelize.BOOLEAN, allowNull:false, defaultValue:false}
 ,
   getterMethods:
-    firstName: -> @.data.name.split(/\s/).shift()
+    firstName: ->
+      data = @getDataValue('data')
+      data = JSON.parse(data) while typeof data == 'string'
+      data.name.split(/\s/).shift()
 
 User = sequelize.define 'users',
   displayName: Sequelize.STRING
@@ -142,14 +148,15 @@ User.findByAccountKey = (accountKey) ->
   sequelize.query(SelectUserByAccountKeySQL, User, {}, {provider_name, provider_user_id}).then (rows) ->
     Q rows[0]
 
+# Updates user's sitter list iff `fn` returns a truthy (which should be an array of sitter values).
+# Resolves to true iff the sitter list was set.
 updateUserSitterListP = (user, fn) ->
   user.getFamily().then (family) ->
     return unless family
-    sitter_ids = fn(family.sitter_ids)
-    return Q(false) unless sitter_ids
-    sitter_ids = '{}' if sitter_ids.length == 0
-    family.updateAttributes({sitter_ids}).then ->
-      Q true
+    Q.when(fn(family.sitter_ids)).then (sitter_ids) ->
+      return false unless sitter_ids
+      sitter_ids = '{}' if sitter_ids.length == 0
+      family.updateAttributes({sitter_ids}).then -> true
 
 
 #

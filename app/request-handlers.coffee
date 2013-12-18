@@ -182,7 +182,9 @@ module.exports =
     updateUserSitterListP user, (sitter_ids) ->
       count = Math.max(0, Math.min(MaxSitterCount, count))
       return if sitter_ids.length == count
-      return _.uniq(sitter_ids.concat([1..MaxSitterCount]))[0...count]
+      SitterProfile.findAll(where:{is_simulated:true}, order:'id').then (sitters) ->
+        availableSitterIds = _.pluck(sitters, 'id')
+        return _.union(sitter_ids, availableSitterIds)[0...count]
 
   # This message is used for testing, to test server error handling and reporting. It throws an error. If running in the
   # production environment, it only throws an error if the `DEBUG_SERVER` environment variable is set.
