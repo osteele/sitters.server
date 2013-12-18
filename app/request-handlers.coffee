@@ -61,8 +61,8 @@ module.exports =
   # responding.
   addSitter: ({user:parent}, {sitterId:sitterProfileId, delay:simulatedDelay}) ->
     # TODO return if the sitter is already on the list
-    SitterProfile.find(sitterProfileId)
-    .then((sitterProfile) -> sitterProfile.getUser())
+    UserProfile.find(sitterProfileId)
+    .then((userProfile) -> userProfile.getUser())
     .then (sitter) ->
       inviteP
         invitationType    : 'inviteSitterToFamily'
@@ -80,17 +80,17 @@ module.exports =
       User.find(invitation.initiator_id).then (parent) ->
         Q.all [
           invitation.updateAttributes status:'accepted'
-          sitter.getSitterProfile().then (sitterProfile) ->
+          sitter.getUserProfile().then (userProfile) ->
             updateUserSitterListP parent, (sitterProfileIds) ->
-              logger.info "Adding sitter", sitterProfile.id, "to", sitterProfileIds
-              return if sitterProfile.id in sitterProfileIds
-              return sitterProfileIds.concat([sitterProfile.id])
-          sitter.getSitterProfile().then (sitterProfile) ->
+              logger.info "Adding sitter", userProfile.id, "to", sitterProfileIds
+              return if userProfile.id in sitterProfileIds
+              return sitterProfileIds.concat([userProfile.id])
+          sitter.getUserProfile().then (userProfile) ->
             message = {
               inviteSitterToFamily : 'sitterAcceptedConnection'
               reserveSitterForTime : 'sitterConfirmedReservation'
             }[invitation.type] || throw new Exception("Unknown invitation type #{invitation.type}")
-            SendClientMessage[message] parent, {sitterProfile, startTime, endTime}
+            SendClientMessage[message] parent, {userProfile, startTime, endTime}
         ]
 
   # The client sends this when the user signs in, and on each launch if the user is already signed in. The server
@@ -162,8 +162,8 @@ module.exports =
   # `delay` is used for development and debugging; it sets the amount of time that one
   # of the simulated sitters will wait before responding.
   reserveSitter: ({user:parent}, {sitterId:sitterProfileId, startTime, endTime, delay:simulatedDelay}) ->
-    SitterProfile.find(sitterProfileId)
-    .then((sitterProfile) -> sitterProfile.getUser())
+    UserProfile.find(sitterProfileId)
+    .then((userProfile) -> userProfile.getUser())
     .then (sitter) ->
       inviteP
         invitationType    : 'reserveSitterForTime'
@@ -182,7 +182,7 @@ module.exports =
     updateUserSitterListP user, (sitter_ids) ->
       count = Math.max(0, Math.min(MaxSitterCount, count))
       return if sitter_ids.length == count
-      SitterProfile.findAll(where:{is_simulated:true}, order:'id').then (sitters) ->
+      UserProfile.findAll(where:{is_simulated:true}, order:'id').then (sitters) ->
         availableSitterIds = _.pluck(sitters, 'id')
         return _.union(sitter_ids, availableSitterIds)[0...count]
 

@@ -20,12 +20,12 @@ updateSittersP = Q.all SitterProfileData.map (sitterData) ->
     phone: "415 555-000#{sitterProfileId}"
 
   console.info 'Updating', sitterProfileId, profileData.name
-  SitterProfile.findOrCreate(id:sitterProfileId).then (sitterProfile) ->
-    sitterProfile.getUser().then (user) ->
+  UserProfile.findOrCreate(id:sitterProfileId).then (userProfile) ->
+    userProfile.getUser().then (user) ->
       Q.when(user or User.create()).then (user) ->
         Q.all [
-          sitterProfile.updateAttributes data:profileData, is_simulated:true
-          user.setSitterProfile sitterProfile
+          userProfile.updateAttributes data:profileData, is_simulated:true
+          user.setSitterProfile userProfile
           user.updateAttributes userAttributes
           user.getAccounts()
           .then (accounts) ->

@@ -10,7 +10,7 @@ winston = require 'winston'
 logger = require('../loggers')('→firebase')
 
 # Database models that are pushed to Firebase.
-SyncedModels = [Account, Family, PaymentCustomer, SitterProfile, User]
+SyncedModels = [Account, Family, PaymentCustomer, UserProfile, User]
 
 ModelClassesByName = {}.tap (dict) ->
   SyncedModels.forEach (model) =>
@@ -40,9 +40,9 @@ entityUpdaters =
         fbSetP getUserFB(account).child('cardInfo'), paymentCustomer.card_info
     )
 
-  sitter_profiles: (sitterProfile) ->
-    fb = SitterFB.child(sitterProfile.id)
-    profileData = _.extend {id:String(sitterProfile.id)}, sitterProfile.data
+  user_profiles: (userProfile) ->
+    fb = SitterFB.child(userProfile.id)
+    profileData = _.extend {id:String(userProfile.id)}, userProfile.data
     fbSetP fb, profileData
 
   users: (user) ->
