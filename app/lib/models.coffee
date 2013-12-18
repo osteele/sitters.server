@@ -105,7 +105,7 @@ Account
   .belongsTo(User)
 
 Family
-  .hasMany(User)
+  .hasMany(User, as:'Parents')
 
 # Invitation
 #   .belongsTo(User, as:'Initiator', foreignKey:'initiator_id')

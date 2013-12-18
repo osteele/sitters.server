@@ -66,7 +66,6 @@ module.exports = {
 
   # Entities
   # --
-  FamilyFB: EnvironmentFB.child('family')
   SitterFB: EnvironmentFB.child('sitter')
   UserFB: EnvironmentFB.child('user')
 }

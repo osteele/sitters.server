@@ -22,13 +22,13 @@ getUserFB = (account) ->
 entityUpdaters =
   accounts: (account) ->
     account.getUser().then (user) ->
-      fb = getUserFB(account).child('family_id')
-      fbOnceP(fb).then (snapshot) ->
-        unless snapshot.val() == user.family_id
-          fbSetP fb, user.family_id
+      user.getFamily().then (family) ->
+        fb = getUserFB(account).child('sitter_ids')
+        fbSetP fb, family.sitter_ids
 
   families: (family) ->
-    fbSetP FamilyFB.child(String(family.id)).child('sitter_ids'), family.sitter_ids
+    family.getParents().then (parents) ->
+      Q.all parents.map entityUpdaters.users
 
   payment_customers: (paymentCustomer) ->
     paymentCustomer.getUser().then((user) ->
