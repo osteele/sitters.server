@@ -27,7 +27,7 @@ class Client
     return this
 
   sendRequestP: (requestType, parameters) ->
-    @_userAuthP.then (userAuthId) =>
+    @_userAuthP.then (userAuthId) ->
       request =
         requestType : requestType
         apiVersion  : API_VERSION

@@ -6,7 +6,7 @@ logger = require('../loggers')('message-bus')
 onMessageForAccount = (userAuthId, callback) ->
   userMessageFB = firebase.MessageFB.child(userAuthId)
   logger.info "Simulated user listening on #{url.parse(userMessageFB.toString()).path}"
-  userMessageFB.on 'child_added', (snapshot) =>
+  userMessageFB.on 'child_added', (snapshot) ->
     key = snapshot.name()
     message = snapshot.val()
     logger.info "Received message #{key}"
