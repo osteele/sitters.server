@@ -83,8 +83,5 @@ exports.updateSomeP = (limit=10) ->
 exports.updateAllP = (trancheSize=10, total=0) ->
   exports.updateSomeP(trancheSize).then (count) ->
     total += count
-    return total
-    if count > 0
-      exports.updateAllP(trancheSize, total)
-    else
-      Q total
+    return total if count == 0
+    exports.updateAllP trancheSize, total
