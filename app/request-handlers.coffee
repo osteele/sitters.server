@@ -127,14 +127,15 @@ module.exports =
   # Family for this user exists.
   registerUser: ({accountKey}, {displayName, email, role}) ->
     [provider_name, provider_user_id] = accountKey.split('-', 2)
+    userAttributes = {displayName, role}
     accountP = Account.findOrCreate {provider_name, provider_user_id}
-    userP = User.findOrCreate {email}, {displayName, role}
+    userP = User.findOrCreate {email}, userAttributes
     Q.all([accountP, userP]).spread (account, user) ->
       logger.info "Account key=#{accountKey}" if account
       logger.info "Update account #{account?.id} user_id=#{user?.id}"
       Q.all [
         account.updateAttributes user_id:user.id
-        user.updateAttributes {displayName} #unless user.displayName == displayName,
+        user.updateAttributes userAttributes
         Family.find(user.family_id).then (family) ->
           return if family
           Family.create({sitter_ids: '{}'}).then (family) ->
