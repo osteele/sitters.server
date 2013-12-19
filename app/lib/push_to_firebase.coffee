@@ -47,9 +47,11 @@ entityUpdaters =
     )
 
   user_profiles: (userProfile) ->
-    fb = SitterFB.child(userProfile.id)
-    profileData = _.extend {id:String(userProfile.id)}, userProfile.data
-    fbSetP fb, profileData
+    userProfile.getUser().then (user) ->
+      return unless user.role == 'sitter'
+      fb = SitterFB.child(user.uuid)
+      profileData = _.extend {id:String(user.uuid)}, userProfile.data
+      fbSetP fb, profileData
 
   users: (user) ->
     user.getAccounts().then (accounts) ->

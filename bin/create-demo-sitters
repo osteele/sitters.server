@@ -22,8 +22,7 @@ updateSittersP = Q.all SitterProfileData.map (sitterData, i) ->
     phone        : "415 555-000#{n}"
     role         : 'sitter'
 
-  console.info 'Updating', uuid, profileData.name
-  # UserProfile.findOrCreate(id:userProfileId).then (userProfile) ->
+  console.info 'Updating simulated user', profileData.name
   User.findOrCreate({uuid}, userAttributes).then (user) ->
     accountAttributes =
       user_id          : user.id
@@ -34,9 +33,11 @@ updateSittersP = Q.all SitterProfileData.map (sitterData, i) ->
       user.updateAttributes userAttributes
       user.getUserProfile().then (profile) ->
         if profile
-          userProfile.updateAttributes data:profileData
+          profile.updateAttributes data:profileData
         else
-          UserProfile.create profileData
+          UserProfile.create(data:profileData).then (profile) ->
+            # user.addProfile profile
+            profile.setUser user
       # ensure each simulated user has an account, so that the simulator
       # can receive message for that user
       user.getAccounts().then (accounts) ->
