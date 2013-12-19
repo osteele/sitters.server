@@ -1,7 +1,7 @@
 #!/usr/bin/env coffee
 
 require('dotenv').load()
-Q = require 'Q'
+Q = require 'q'
 Q.longStackSupport = true
 
 firebase = require '../app/integrations/firebase'
