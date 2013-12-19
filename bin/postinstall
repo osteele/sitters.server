@@ -1,6 +1,7 @@
 #!/bin/bash -eu
 
 DATABASE_URL=${DATABASE_URL:-postgres://sitters:sitters@127.0.0.1:5432/sitters}
+export DATABASE_URL
 
 cd `dirname $0`/..
 
