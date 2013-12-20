@@ -92,10 +92,9 @@ module.exports =
   # The client sends this when the user signs in, and on each launch if the user is already signed in. The server
   # creates or updates a Device record and associates it with the user, for use with mobile notifications.
   registerDeviceToken: ({user}, {deviceUuid:uuid, token}) ->
-    user_id = user.id
-    Device.find(where:{uuid})
-    .then (device) ->
-      logger.info "Register device #{uuid} for user ##{user.id}"
+    user_id = user?.id
+    Device.find(where:{uuid}).then (device) ->
+      logger.info "Register device #{uuid} for user ##{user_id}"
       if device
         return if device.user_id == user_id and device.token == token
         logger.info "Update device ##{device.id}"
