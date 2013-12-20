@@ -65,6 +65,7 @@
     "read": "~1.0.5",
     "should": "~2.1.1",
     "sinon": "~1.7.3",
-    "supertest": "~0.8.2"
+    "supertest": "~0.8.2",
+    "nodemon": "~0.7.10"
   }
 }

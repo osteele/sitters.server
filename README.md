@@ -27,9 +27,9 @@ Copy `.env.template` to `.env` and fill in the values:
 
 ## Running
 
-Run the web server and workers:
+Run the web server and workers; reload when any file changes:
 
-    coffee server.coffee
+    nodemon
 
 Run a simulated client in another terminal:
 
