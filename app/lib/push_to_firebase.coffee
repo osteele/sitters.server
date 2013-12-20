@@ -16,21 +16,21 @@ ModelClassesByName = {}.tap (dict) ->
   SyncedModels.forEach (model) =>
     this[model.tableName] = model
 
-getUserFB = (account) ->
-  UserFB.child('auth').child(account.firebaseKey)
+getAccountRef = (account) ->
+  usersRef.child('auth').child(account.firebaseKey)
 
 entityUpdaters =
   accounts: (account) ->
     account.getUser().then (user) ->
       user.getFamily().then (family) ->
         if family
-          fb = getUserFB(account).child('sitter_ids')
+          accountRef = getAccountRef(account).child('sitter_ids')
           sitterIds = family.sitter_ids
           if sitterIds.length
             sequelize.execute("SELECT uuid FROM users WHERE id IN (#{sitterIds.join(',')})") .then (uuids) ->
-              fbSetP fb, _.pluck(uuids, 'uuid')
+              fbSetP accountRef, _.pluck(uuids, 'uuid')
           else
-            fbSetP fb, []
+            fbSetP accountRef, []
 
   families: (family) ->
     family.getParents().then (parents) ->
@@ -43,28 +43,34 @@ entityUpdaters =
     ).then((accounts) ->
       Q.all accounts.map (account) ->
         logger.info "Update account ##{account.id}"
-        fbSetP getUserFB(account).child('cardInfo'), paymentCustomer.card_info
+        fbSetP getAccountRef(account).child('cardInfo'), paymentCustomer.card_info
     )
 
   user_profiles: (userProfile) ->
     userProfile.getUser().then (user) ->
-      return unless user.role == 'sitter'
-      fb = SitterFB.child(user.uuid)
+      return unless user.is_simulated and user.role == 'sitter'
+      sitterProfileFB = sitterProfilesRef.child(user.uuid)
       profileData = _.extend {id:String(user.uuid)}, userProfile.data
-      fbSetP fb, profileData
+      fbSetP sitterProfileFB, profileData
 
   users: (user) ->
     user.getAccounts().then (accounts) ->
       Q.all accounts.map entityUpdaters.accounts
 
 SelectChangesSQL = """
-SELECT DISTINCT table_name, entity_id, now() AS queried_at
-FROM change_log LIMIT :limit
+SELECT DISTINCT
+  table_name,
+  entity_id, now() AS queried_at
+FROM change_log
+LIMIT :limit
 """
 
 DeleteChangesSQL = """
-DELETE FROM change_log
-WHERE table_name=:table_name AND entity_id=:entity_id AND timestamp<=:queried_at
+DELETE
+FROM change_log
+WHERE table_name = :table_name
+  AND entity_id = :entity_id
+  AND timestamp <= :queried_at
 """
 
 # Update at most `limit` entities.

@@ -4,7 +4,7 @@ firebase = require '../integrations/firebase'
 logger = require('../loggers')('message-bus')
 
 onMessageForAccount = (userAuthId, callback) ->
-  userMessageFB = firebase.MessageFB.child(userAuthId)
+  userMessageFB = firebase.accountMessagesRef.child(userAuthId)
   logger.info "Simulated user listening on #{url.parse(userMessageFB.toString()).path}"
   userMessageFB.on 'child_added', (snapshot) ->
     key = snapshot.name()
@@ -14,18 +14,18 @@ onMessageForAccount = (userAuthId, callback) ->
     userMessageFB.child(key).remove()
 
 onServerRequest = (callback) ->
-  logger.info "Polling #{firebase.RequestFB}"
-  firebase.RequestFB.on 'child_added', (snapshot) ->
+  logger.info "Polling #{firebase.requestsRef}"
+  firebase.requestsRef.on 'child_added', (snapshot) ->
     key = snapshot.name()
     request = snapshot.val()
     callback request, ->
-    RequestFB.child(key).remove()
+    requestsRef.child(key).remove()
 
 sendMessageToAccount = (userAuthId, message) ->
-  MessageFB.child(userAuthId).push message
+  accountMessagesRef.child(userAuthId).push message
 
 sendRequestToServer = (request) ->
-  firebase.RequestFB.push request
+  firebase.requestsRef.push request
 
 module.exports = {
   onMessageForAccount

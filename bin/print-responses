@@ -9,7 +9,7 @@ argv = require('optimist').argv
 process.env.FIREBASE_ENV = 'production' if argv.production
 
 firebase = require '../app/integrations/firebase'
-{MessageFB} = firebase
+{accountMessagesRef} = firebase
 _(global).extend require('../lib/utils')
 
 UserAuthId = 'facebook-172347878787877'
@@ -18,7 +18,7 @@ do ->
   [provider, id] = UserAuthId.split('-', 2)
   firebase.authenticateAs {provider, id}
 
-userMessageFB = MessageFB.child(UserAuthId)
+userMessageFB = accountMessagesRef.child(UserAuthId)
 
 printMessage = (message) ->
   console.log yaml.dump(message)

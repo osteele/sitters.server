@@ -6,15 +6,15 @@ FirebaseTokenGenerator = require('firebase-token-generator')
 TokenGenerator = new FirebaseTokenGenerator(process.env.FIREBASE_SECRET)
 logger = require('../loggers')('firebase')
 
-FirebaseRoot = new Firebase('https://sevensitters.firebaseIO.com/')
+firebaseRef = new Firebase('https://sevensitters.firebaseIO.com/')
 EnvironmentFB = do ->
   prefix = process.env.FIREBASE_ENV || process.env.NODE_ENV || 'development'
-  FirebaseRoot.child(prefix)
+  firebaseRef.child(prefix)
 
-# Wrapper for `FirebaseRoot.auth`. Creates the token, authenticates with a handler to renews it when it expires.
+# Wrapper for `firebaseRef.auth`. Creates the token, authenticates with a handler to renews it when it expires.
 authenticateAs = (data={}, options={}) ->
   token = TokenGenerator.createToken(data, options)
-  FirebaseRoot.auth token, (error, result) ->
+  firebaseRef.auth token, (error, result) ->
     logger.error 'error', error if error
     # will expire at result.expires * 1000
   , (error) ->
@@ -22,7 +22,7 @@ authenticateAs = (data={}, options={}) ->
     authenticateAs data, options
 
 module.exports = {
-  FirebaseRoot
+  firebaseRef
   EnvironmentFB
 
   authenticateAs
@@ -61,11 +61,11 @@ module.exports = {
 
   # Request and response queues
   # --
-  RequestFB: EnvironmentFB.child('request')
-  MessageFB: EnvironmentFB.child('message/user/auth')
+  requestsRef: EnvironmentFB.child('request')
+  accountMessagesRef: EnvironmentFB.child('message/user/auth')
 
   # Entities
   # --
-  SitterFB: EnvironmentFB.child('sitter')
-  UserFB: EnvironmentFB.child('user')
+  sitterProfilesRef: EnvironmentFB.child('sitter')
+  usersRef: EnvironmentFB.child('user')
 }

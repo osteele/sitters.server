@@ -31,6 +31,7 @@ updateSittersP = Q.all SitterProfileData.map (sitterData, i) ->
 
     Q.all [
       user.updateAttributes userAttributes
+
       user.getUserProfile().then (profile) ->
         if profile
           profile.updateAttributes data:profileData
@@ -38,6 +39,7 @@ updateSittersP = Q.all SitterProfileData.map (sitterData, i) ->
           UserProfile.create(data:profileData).then (profile) ->
             # user.addProfile profile
             profile.setUser user
+
       # ensure each simulated user has an account, so that the simulator
       # can receive message for that user
       user.getAccounts().then (accounts) ->

@@ -102,7 +102,7 @@ sendRequestP = (requestType, options=argv, printMessage=argv['verbose']) ->
       console.info 'Sending request:'
       console.info yaml.dump(request).replace(/(^|\n)/g, '$1  ')
     deferred = Q.defer()
-    requestFb = firebase.RequestFB.push request, (err) ->
+    requestFb = firebase.requestsRef.push request, (err) ->
       if err then deferred.reject err else deferred.resolve()
     console.info '->', requestFb.toString() if argv['verbose']
     return deferred.promise
@@ -122,7 +122,7 @@ printMessage = (message) ->
   console.info yaml.dump(message).replace(/(^|\n)/g, "$1  ")
 
 printMessages = ->
-  userMessageFB = firebase.MessageFB.child(Defaults.userAuthId)
+  userMessageFB = firebase.accountMessagesRef.child(Defaults.userAuthId)
   userMessageFB.on 'child_added', (snapshot) ->
     key = snapshot.name()
     message = snapshot.val()
