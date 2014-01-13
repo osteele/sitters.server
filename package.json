@@ -66,6 +66,7 @@
     "should": "~2.1.1",
     "sinon": "~1.7.3",
     "supertest": "~0.8.3",
-    "nodemon": "~1.0.8"
+    "nodemon": "~1.0.8",
+    "grunt-shell": "~0.6.1"
   }
 }

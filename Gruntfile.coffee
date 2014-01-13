@@ -19,6 +19,11 @@ module.exports = (grunt) ->
       default_option:
         port: 5000
 
+    shell:
+      compileSecurityRules:
+        options: {stdout: true}
+        command: './bin/coffee2json config/firebase-security-rules.coffee > config/firebase-security-rules.json'
+
     watch:
       options:
         livereload: true
@@ -28,9 +33,13 @@ module.exports = (grunt) ->
       gruntfile:
         files: 'Gruntfile.coffee'
         tasks: ['coffeelint:gruntfile']
+      securityRules:
+        files: 'config/firebase-security-rules.coffee'
+        tasks: ['shell:compileSecurityRules']
 
   require('load-grunt-tasks')(grunt)
 
   grunt.registerTask 'docs', ['docco']
   grunt.registerTask 'lint', ['coffeelint']
+  grunt.registerTask 'compileSecurityRules', ['shell:compileSecurityRules']
   # grunt.registerTask 'default', ['update', 'connect', 'autowatch']
