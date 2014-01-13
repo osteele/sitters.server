@@ -22,7 +22,7 @@ module.exports = (grunt) ->
     shell:
       compileSecurityRules:
         options: {stdout: true}
-        command: './bin/coffee2json config/firebase-security-rules.coffee > config/firebase-security-rules.json'
+        command: './bin/coffee2json config/firebase-security-rules.coffee > build/firebase-security-rules.json'
 
     watch:
       options:

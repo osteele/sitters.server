@@ -3,4 +3,3 @@ node_modules
 *.pem
 build/
 *.log
-config/firebase-security-rules.json

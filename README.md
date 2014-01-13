@@ -84,5 +84,5 @@ To update the Firebase security rules:
 2. Shell `grunt compileSecurityRules`
 3. Visit https://sevensitters.firebaseio.com,
   click the Security icon,
-  copy `./config/firebase-security-rules.json` into the text area,
+  copy `./build/firebase-security-rules.json` into the text area,
   and click "Save Rules".
