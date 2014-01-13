@@ -74,12 +74,12 @@
       },
       "sitter": {
         ".read": true
-      }
-    },
-    "user": {
-      "auth": {
-        "$auth": {
-          ".read": "$auth == auth.provider + '-' + auth.id"
+      },
+      "user": {
+        "auth": {
+          "$auth": {
+            ".read": "$auth == auth.provider + '-' + auth.id"
+          }
         }
       }
     },
