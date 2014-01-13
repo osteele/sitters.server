@@ -74,3 +74,15 @@ Style guides:
 - [Heroku](https://dashboard.heroku.com/apps/sevensitters-api/resources) PaaS hosting
 - [Papertrail](https://papertrailapp.com/systems/sevensitters-api/dashboard) consolidated log file (or `heroku addons:open papertrail`)
 - [Rollbar](https://rollbar.com/project/5918/) exception monitoring (or `heroku addons:open rollbar`)
+
+
+# Firebase Security Rules
+
+To update the Firebase security rules:
+
+1. Edit `./config/firebase-security-rules.coffee`.
+2. Shell `grunt compileSecurityRules`
+3. Visit https://sevensitters.firebaseio.com,
+  click the Security icon,
+  copy `./config/firebase-security-rules.json` into the text area,
+  and click "Save Rules".
