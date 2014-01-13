@@ -1,5 +1,8 @@
 rules:
   development:
+    expirationDate:
+      ".read": true
+
     family:
       ".read": true
 
@@ -26,6 +29,9 @@ rules:
           ".read": "$auth == auth.provider + '-' + auth.id"
 
   production:
+    expirationDate:
+      ".read": true
+
     account:
       $provider:
         $id:
