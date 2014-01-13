@@ -1,6 +1,4 @@
 #!/bin/bash -eu
 
-remote="$1"
-url="$2"
-
+PATH=./node_modules/.bin:$PATH
 grunt lint
