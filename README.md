@@ -78,11 +78,17 @@ Style guides:
 
 # Firebase Security Rules
 
-To update the Firebase security rules:
+To update the Firebase security rules for developemnt:
 
-1. Edit `./config/firebase-security-rules.coffee`.
-2. Shell `grunt compileSecurityRules`
-3. Visit https://sevensitters.firebaseio.com,
-  click the Security icon,
-  copy `./build/firebase-security-rules.json` into the text area,
-  and click "Save Rules".
+1. Edit `./config/firebase-development-rules.coffee`.
+2. Shell `grunt compile-security-rules`
+3. Upload the compiled rules:
+    1. Visit https://sevensitters.firebaseio.com,
+    2. click the Security icon,
+    3. copy `./build/firebase-security-rules.json` into the text area,
+    4. click "Save Rules".
+
+To promote the development security rules to production:
+
+1. Shell `grunt promote-firebase-rules`
+2. Compile and deploy the rules as per steps #2 and #3 above.
