@@ -24,7 +24,6 @@ require('../lib/mock_requires')
   apn: require './mocks/mock.apn'
   firebase: mockFirebase
   'firebase-token-generator': mockFirebase.mock.TokenGenerator
-  kue: require './mocks/mock.kue'
   rollbar:
     init: ->
     reportMessage: ->
@@ -32,11 +31,11 @@ require('../lib/mock_requires')
   stripe: -> {}
   # app module mocks
   '../app/lib/message_bus': messageBus
+  '../app/jobs': require './mocks/mock.jobs'
 
 
 # Import (non-mocked) application modules.
 # --
-kue = require '../app/integrations/kue'
 models = require '../app/lib/models'
 workers = require '../app/workers'
 {sequelize} = models
@@ -65,13 +64,11 @@ processMessagesP = ->
   jobQueue = workers.jobs
   jobQueue.run()
   messageBus.run()
-  Q.spread [
-    Q.ninvoke(jobQueue, 'activeCount')
-    Q.ninvoke(jobQueue, 'inactiveCount')
-  ], (activeJobs, inactiveJobs) ->
-    activeMessages = messageBus.activeCount()
-    # console.log {'active jobs':activeJobs, 'inactive jobs':inactiveJobs, 'active messages':activeMessages}
-    return Q.delay(100).then(-> processMessagesP()) if activeJobs or inactiveJobs or activeMessages
+  activeJobs = jobQueue.activeCount()
+  inactiveJobs = jobQueue.inactiveCount()
+  activeMessages = messageBus.activeCount()
+  # console.log {'active jobs':activeJobs, 'inactive jobs':inactiveJobs, 'active messages':activeMessages}
+  return Q.delay(5).then(-> processMessagesP()) if activeJobs or inactiveJobs or activeMessages
 
 describe 'invitations', ->
   beforeEach (done) ->

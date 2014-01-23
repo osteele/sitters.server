@@ -60,6 +60,9 @@ module.exports =
   # is used for development and debugging; it sets the amount of time that one of the simulated sitters will wait before
   # responding.
   addSitter: ({user:parent}, {sitterId, delay:simulatedDelay}) ->
+    unless parent
+      logger.error 'no parent'
+      return
     # TODO return if the sitter is already on the list
     User.find(where:{uuid:sitterId}).then (sitter) ->
       inviteP

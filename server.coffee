@@ -8,7 +8,6 @@
 # --
 
 require('dotenv').load()
-kue = require './app/integrations/kue'
 logger = require('./app/loggers')('server')
 require './app/workers'
 
@@ -78,7 +77,7 @@ app.configure ->
   app.use app.router
   app.use express.static(__dirname + '/public')
   app.use requireAdmin
-  app.use '/jobs', kue.app
+  # anything mounted below here (currently, nothing)  requires admin access
   app.use (err, req, res, next) ->
     console.error err.stack
     next err

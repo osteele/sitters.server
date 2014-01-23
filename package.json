@@ -31,7 +31,6 @@
     "firebase": "~1.0.2",
     "firebase-token-generator": "~0.1.4",
     "jade": "~1.1.4",
-    "kue": "~0.6.2",
     "marked": "~0.3.0",
     "moment": "~2.5.0",
     "optimist": "~0.6.0",
@@ -68,6 +67,7 @@
     "supertest": "~0.8.3",
     "nodemon": "~1.0.8",
     "grunt-shell": "~0.6.1",
-    "grunt-cli": "~0.1.11"
+    "grunt-cli": "~0.1.11",
+    "amqp": "~0.1.8"
   }
 }

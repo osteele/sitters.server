@@ -5,7 +5,7 @@
 # It can be run standalone. The web server also includes it.
 
 # Set the process's title so it's easier to find in `ps`, # `top`, Activity Monitor, and so on.
-process.title = 'sitters.workers'
+process.title = 'sitters.workers' if require.main == module
 
 
 #
@@ -18,11 +18,9 @@ Q = require 'q'
 Q.longStackSupport = true unless process.env.NODE_ENV == 'production' and not process.env.DEBUG_SERVER
 util = require 'util'
 moment = require 'moment'
-kue = require './integrations/kue'
-jobs = kue.createQueue()
 _(global).extend require('./lib/models')
 logger = require('./loggers')('workers')
-
+jobs = require './jobs'
 
 #
 # Rollbar
@@ -93,17 +91,19 @@ updateFirebaseFromDatabase().then (count) ->
 messageBus = require './lib/message_bus'
 messageBus.onServerRequest (request, done) ->
   title = "#{request.requestType} from #{request.userAuthId}"
-  jobs.create('request', {request, title}).save -> done()
+  jobs.create('request', {request, title}).then -> done()
 
 jobs.process 'request', (job, done) ->
-  processRequestP(job.data.request)
+  processRequestP(job.request)
   .then(
     -> done()
     (err) ->
       logger.error err
-      rollbar.handleError err
-      done err
-  ).done()
+      # TODO restart the job or move to another queue to retry
+      done err # removes the job from the queue
+      rollbar.handleError err # doesn't return
+  )
+  .done()
 
 processRequestP = (request) ->
   {userAuthId, requestType, parameters} = request

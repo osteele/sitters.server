@@ -8,7 +8,7 @@ Install [Homebrew](http://brew.sh).
 
 Install dependencies (Mac OS X):
 
-    brew install git node postgresql redis
+    brew install git node postgresql rabbitmq redis
     npm install
 
 Configure git:
@@ -49,6 +49,8 @@ If the source documentation has been built, this is also documented in `./build/
 
 Server -> Client requests are documented in `./lib/messages.coffee`.
 If the source documentation has been built, this is also documented in `./build/docs/lib/messages.html`.
+
+Log into the [local RabbitMQ web dashboard](http://localhost:15672/#/queues/%2F/request) as guest/guest to see the job queue.
 
 
 ## Developer Guidelines

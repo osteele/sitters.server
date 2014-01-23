@@ -1,5 +1,4 @@
 ## Server Dashboards
-- [Job Queue](/jobs)
 - [Firebase](https://sevensitters.firebaseio.com/) data synchronization
 - [Heroku](https://dashboard.heroku.com/apps/sevensitters-api/resources) server hosting
 - [Papertrail](https://papertrailapp.com/systems/sevensitters-api/dashboard) consolidated log file

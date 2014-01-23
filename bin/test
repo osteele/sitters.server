@@ -1,4 +1,6 @@
 #!/bin/bash -eu
 
-mocha --bail -R spec --compilers coffee:coffee-script ./test/test_workers.coffee
-mocha --bail -R spec --compilers coffee:coffee-script ./test/test_routes.coffee
+# Invoke these in separate processes, since they mock different modules:
+MOCHA="mocha --bail -R spec --compilers coffee:coffee-script"
+$MOCHA ./test/test_workers.coffee
+$MOCHA ./test/test_routes.coffee
