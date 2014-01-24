@@ -1,9 +1,11 @@
 language: node_js
 
 services:
-  - postgresql
   - rabbitmq
   - redis-server
+
+addons:
+  postgresql: 9.3
 
 before_install:
   - psql -c 'create database sitters;' -U postgres
