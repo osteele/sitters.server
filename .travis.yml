@@ -6,4 +6,11 @@ services:
 before_script:
 - psql -c 'create database sitters;' -U postgres
 env:
-- DATABASE_URL=postgres://postgres@127.0.0.1/sitters
+  global:
+  - DATABASE_URL=postgres://postgres@127.0.0.1/sitters
+  - FIREBASE_ENV=test
+  - GITHUB_ADMIN_IDS=test
+  - GITHUB_CALLBACK_URL=http://localhost:5000/auth/github/callback
+  - GITHUB_CLIENT_ID=a13ac089e325e4ba55af
+  - secure: IuJ+bTsx3ZD7FASGOL1y9bpFZ1HbhU5Mg/0uxGrRTmZYXDR9wFyhxGLir47FCqQtMawQJj4ESFgbZrHM52qiOSX9tGfsnozuomSpQwDAL/VmXKPNHM0s0V4echzKWdQDIR3mf1INBCGczuj/QJH6dJpswF+A2O4L2EteWyExTKI=
+  - secure: jwtu8JdpusBGZdfeysCoNHM2BHJiXW1oGMxvy6i06SN20lfcABN7l34J5PfTmdNvGTbkpgPfxaD1lCbT+qtdYqqfaexOahmLH7ZiuJMku4hz/5Jzvv4fhVPWpihBihCcePod30xbkddI5+DhZ0VW6wQ2MkC1ZOdj5v+oRtfGPcQ=
