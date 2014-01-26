@@ -41,6 +41,7 @@
     "redis-url": "~0.2.0",
     "rollbar": "osteele/node_rollbar",
     "sequelize": "~2.0.0-beta.2",
+    "sequelize-postgres": "~2.0.0-beta.2",
     "stripe": "~2.3.4",
     "underscore": "~1.5.2",
     "underscore.string": "~2.3.3",
