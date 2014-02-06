@@ -1,0 +1,5 @@
+#!/usr/bin/env node
+
+coffeeModule = require('coffee-script');
+if (coffeeModule && coffeeModule.register) coffeeModule.register();
+require('../node_modules/.bin/db-migrate');
